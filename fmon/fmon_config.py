@@ -19,8 +19,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 class FMonConfiguration():
     def __init__(self, DbClass):
-        self.connection = DbClass.connection
+        self.database = DbClass.database
+        self._config_data = self.database.config_data.find_one()
 
     @property
     def serial_port(self):
-        return '/dev/ttyAMA0'
+        return self._config_data['serial']['port']
+
+    @property
+    def baudrate(self):
+        return self._config_data['serial']['baudrate']
