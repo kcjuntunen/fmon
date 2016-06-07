@@ -21,17 +21,46 @@ import pymongo
 
 class MongoConnection():
     def __init__(self, server, port, username, passwd):
-        self.server = server
-        self.port = port
-        self.client = None
+        self._server = server
+        self._port = port
+        self._client = None
+        self._mongdb = None
+        self._timeseries_data = None
+        self._config_data = None
 
     @property
     def connection(self):
-        if self.client is None:
+        if self._client is None:
             try:
-                self.client = pymongo.MongoClient(self.server,
-                                                  self.port)
-                
-            except pymongo.errors.ConnectionFailure as e:
-                print('Err: {0}'.format(e.__str__()))
-        return self.client
+                self._client = pymongo.MongoClient(self._server,
+                                                   self._port)
+            except pymongo.errors.ConnectionFailure as cf:
+                print('Mongo connection failure: {0}'.format(cf))
+        return self._client
+
+    @property
+    def database(self):
+        if self._mongdb is None:
+            try:
+                self._mongdb = self.connection['test_database']
+            except pymongo.errors.PyMongoError as pme:
+                print('PyMongo error: {0}'.format(pme))
+        return self._mongdb
+
+    @property
+    def config_data(self):
+        if self._config_data is None:
+            try:
+                self._config_data = self.database['config']
+            except pymongo.errors.PyMongoError as pme:
+                print('PyMongo error: {0}'.format(pme))
+        return self._config_data
+
+    @property
+    def timeseries_data(self):
+        if self._timeseries_data is None:
+            try:
+                self._timeseries_data = self.database['posts']
+            except pymongo.errors.PyMongoError as pme:
+                print('PyMongo error: {0}'.format(pme))
+        return self._timeseries_data
