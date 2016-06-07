@@ -9,3 +9,4 @@ class TestCreate(TestCase):
     def test_all_interfaces(self):
         a = ip.all_interfaces()
         print(a)
+        self.assertTrue('lo' in a)
