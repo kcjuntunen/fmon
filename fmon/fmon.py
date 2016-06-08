@@ -21,44 +21,68 @@ import json
 import logging
 import pymongo
 import serial
-import ip
 from threading import Timer, Thread
+from .mongoconnection import MongoConnection
+from .fmonconfig import FMonConfiguration
+
+from fmon import LOGGING_FORMAT
+from fmon import DC2
 
 class Fmon():
     def __init__(self):
         # set up logging
-        self.logger = logging.Logger(format=LOGGING_FORMAT)
-        self.device_info = {'clientip': ip.get_ip_address(), 'user': 'OfficePi'}
-        # read settings file for db connection info
-        client = pymongo.MongoClient('localhost', 27017)
-        db = client.test_database
-        # read db for serial info
-        self.ser = serial.Serial(port='/dev/ttyAMA0', baudrate=115200)
-        pass
+        logging.basicConfig(format=LOGGING_FORMAT)
+        fmt = logging.Formatter(LOGGING_FORMAT)
+        ch = logging.StreamHandler()
+        ch.setFormatter(fmt)
+        ch.setLevel(logging.WARNING)
+        fh = logging.FileHandler('fmon.log')
+        fh.setFormatter(fmt)
+        fh.setLevel(logging.DEBUG)
+
+        self.logger = logging.getLogger('FMon')
+        self.logger.addHandler(ch)
+        self.logger.addHandler(fh)
+        self.logger.debug('Connecting to db')
+        self.mc = MongoConnection('localhost', 27017, '', '')
+        self.fmc = FMonConfiguration(self.mc)
+        self.logger.debug('Opening serial')
+        self.ser = serial.Serial(port=self.fmc.port, baudrate=self.fmc.baudrate)
 
     def poll(self):
         self.ser.write(DC2)
         self.ser.flush()
         self.logger.debug("Polling arduino")
-        Timer(5, poll, (self)).start()
+
+    def poll_loop(self):
+        self.poll()
+        Timer(5, self.poll, ()).start()
+
+    def get_line(self):
+        line = self.ser.readline().decode('utf-8').strip()
+        self.logger.debug(line)
+        return line
 
     def listen(self):
+        json_ob = None
         while True:
-            line = ser.readline().decode('utf-8')
-            json_ob = None
             try:
-                json_ob = json.loads(line)
-            except Exception as ex:
-                print('Probably not JSON: {0}'.format(ex.__str__()))
-
+                json_ob = json.loads(self.get_line())
+            except ValueError as ve:
+                self.logger.error('Probably not JSON: {0}'.format(ve))
             self.process_data(json_ob)
 
     def process_data(self, json_ob):
         try:
             if 'Poll' in json_ob:
-                ss = self.db.snapshots
-                ss.insert(json_ob['Poll'])
+                self.mc.timeseries_insert(json_ob['Poll'])
         except pymongo.errors.ConnectionFailure as cf:
-            print('Connection Failure: {0}'.format(cf.__str__()))
+            self.logger.error('Connection Failure: {0}'.format(cf))
         except pymongo.errors.ConfigurationError as ce:
-            print('Configuration Error: {0}'.format(ce.__str__()))
+            self.logger.error('Configuration Error: {0}'.format(ce))
+
+def start():
+    Timer(10, exit, (0,)).start()
+    f = Fmon()
+    f.poll_loop()
+    f.listen()
