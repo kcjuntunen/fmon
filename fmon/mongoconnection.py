@@ -18,6 +18,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """
 
 import pymongo
+import logging
 
 class MongoConnection():
     def __init__(self, server, port, username, passwd):
@@ -27,15 +28,16 @@ class MongoConnection():
         self._mongdb = None
         self._timeseries_data = None
         self._config_data = None
+        self.logger = logging.getLogger('FMon')
 
     @property
     def connection(self):
         if self._client is None:
             try:
                 self._client = pymongo.MongoClient(self._server,
-                                                   self._port)
+                                                   self._port)                
             except pymongo.errors.ConnectionFailure as cf:
-                print('Mongo connection failure: {0}'.format(cf))
+                self.logger.error('Mongo connection failure: {0}'.format(cf))
         return self._client
 
     @property
@@ -44,16 +46,16 @@ class MongoConnection():
             try:
                 self._mongdb = self.connection['test_database']
             except pymongo.errors.PyMongoError as pme:
-                print('PyMongo error: {0}'.format(pme))
+                self.logger.error('PyMongo error: {0}'.format(pme))
         return self._mongdb
 
     @property
     def config_data(self):
         if self._config_data is None:
             try:
-                self._config_data = self.database['config']
+                self._config_data = self.database.config
             except pymongo.errors.PyMongoError as pme:
-                print('PyMongo error: {0}'.format(pme))
+                self.logger.error('PyMongo error: {0}'.format(pme))
         return self._config_data
 
     @property
@@ -64,3 +66,9 @@ class MongoConnection():
             except pymongo.errors.PyMongoError as pme:
                 print('PyMongo error: {0}'.format(pme))
         return self._timeseries_data
+
+    def timeseries_insert(self, data):
+        if 'Poll' in data:
+            data = data['Poll']
+        self.logger.debug('Inserting {0}'.format(data))
+        self.timeseries_data.insert_one(data)

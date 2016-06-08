@@ -19,13 +19,20 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 class FMonConfiguration():
     def __init__(self, DbClass):
-        self.database = DbClass.database
-        self._config_data = self.database.config_data.find_one()
+        self._config_data = DbClass.config_data
 
     @property
-    def serial_port(self):
-        return self._config_data['serial']['port']
+    def config(self):
+        return self._config_data.find_one() 
+        
+    @property
+    def port(self):
+        return self.config['serial']['port']
 
     @property
     def baudrate(self):
-        return self._config_data['serial']['baudrate']
+        return int(self.config['serial']['baudrate'])
+
+    @property
+    def sensors(self):
+        return self.config['sensors']
