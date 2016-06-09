@@ -18,4 +18,28 @@ class TestCreate(TestCase):
         self.assertIsNotNone(self.mc.timeseries_data)
 
     def test_timeseries_insert(self):
-        self.mc.timeseries_insert({ "Poll": { "hPa": 111, "tempF": 11, "light": 111 } })
+        self.mc.timeseries_insert(
+            { "Poll":
+              { "hPa": 111,
+                "tempF": 11,
+                "light": 111
+              }
+            })
+
+        self.mc.timeseries_insert(
+              { "hPa": 111,
+                "tempF": 11,
+                "light": 111
+              })
+
+    def test_event_insert(self):
+        self.mc.event_insert({ "Event":
+              { "type": "PIR detect",
+                "value": 0
+              }
+            })
+
+        self.mc.event_insert(
+              { "type": "PIR reset",
+                "value": 0
+              })

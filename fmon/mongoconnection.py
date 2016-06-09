@@ -17,8 +17,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """
 
-import pymongo
+import datetime
 import logging
+import pymongo
 
 class MongoConnection():
     def __init__(self, server, port, username, passwd):
@@ -27,6 +28,7 @@ class MongoConnection():
         self._client = None
         self._mongdb = None
         self._timeseries_data = None
+        self._event_data = None
         self._config_data = None
         self.logger = logging.getLogger('FMon')
 
@@ -35,16 +37,20 @@ class MongoConnection():
         if self._client is None:
             try:
                 self._client = pymongo.MongoClient(self._server,
-                                                   self._port)                
+                                                   self._port)
             except pymongo.errors.ConnectionFailure as cf:
                 self.logger.error('Mongo connection failure: {0}'.format(cf))
+            except pymongo.errors.PyMongoError as pme:
+                self.logger.error('Mongo connection failure: {0}'.format(cf))
+                exit(-1)
         return self._client
 
     @property
     def database(self):
         if self._mongdb is None:
             try:
-                self._mongdb = self.connection['test_database']
+                db = self.connection.arduinolog
+                self._mongdb = db
             except pymongo.errors.PyMongoError as pme:
                 self.logger.error('PyMongo error: {0}'.format(pme))
         return self._mongdb
@@ -62,13 +68,51 @@ class MongoConnection():
     def timeseries_data(self):
         if self._timeseries_data is None:
             try:
-                self._timeseries_data = self.database['posts']
+                td = self.database.timeseriesdata
+                self._timeseries_data = td
             except pymongo.errors.PyMongoError as pme:
-                print('PyMongo error: {0}'.format(pme))
+                self.logger.error('PyMongo error: {0}'.format(pme))
         return self._timeseries_data
 
+    @property
+    def event_data(self):
+        if self._event_data is None:            
+            try:
+                ed = self.database.eventdata
+                self._event_data = ed
+            except pymongo.errors.PyMongoError as pme:
+                self.logger.error('PyMongo error: {0}'.format(pme))
+        return self._event_data
+
+    @property
+    def current_hour(self):
+        now = datetime.datetime.now()
+        y = now.year
+        m = now.month
+        d = now.day
+        h = now.hour
+        return datetime.datetime(y, m, d, h)
+
+    @property
+    def current_minute(self):
+        m = datetime.datetime.now().minute
+        return m
+
+    @property
+    def current_second(self):
+        s = datetime.datetime.now().second
+        return s
+            
     def timeseries_insert(self, data):
+        payload = {}
         if 'Poll' in data:
             data = data['Poll']
         self.logger.debug('Inserting {0}'.format(data))
+        payload['ts_hour'] = self.current_hour
         self.timeseries_data.insert_one(data)
+
+    def event_insert(self, data):
+        if 'Event' in data:
+            data = data['Event']
+        self.logger.debug('Inserting {0}'.format(data))
+        self.event_data.insert_one(data)

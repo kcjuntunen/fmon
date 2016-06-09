@@ -76,6 +76,8 @@ class Fmon():
         try:
             if 'Poll' in json_ob:
                 self.mc.timeseries_insert(json_ob['Poll'])
+            if 'Event' in json_ob:
+                self.mc.event_insert(json_ob['Event'])
         except pymongo.errors.ConnectionFailure as cf:
             self.logger.error('Connection Failure: {0}'.format(cf))
         except pymongo.errors.ConfigurationError as ce:
