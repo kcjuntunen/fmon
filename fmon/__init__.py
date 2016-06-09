@@ -15,4 +15,4 @@ DC3 = b'\x13'
 DC4 = b'\x14'
 
 # Logging format
-LOGGING_FORMAT = '%(asctime)-15s %(message)s'
+LOGGING_FORMAT = '%(asctime)-15s:%(levelname)s:%(name)s:%(message)s'
