@@ -16,3 +16,4 @@ DC4 = b'\x14'
 
 # Logging format
 LOGGING_FORMAT = '%(asctime)-15s:%(levelname)s:%(name)s:%(message)s'
+CONSOLE_FORMAT = '%(levelname)s: %(message)s'

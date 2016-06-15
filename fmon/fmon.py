@@ -1,5 +1,5 @@
 """
-Log timeseries sensor data from serial.
+Mongo connection for fmon.
 Copyright (C) 2016 Amstore Corp.
 
 This program is free software; you can redistribute it and/or
@@ -16,8 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """
+import sys
+print(sys.path)
 
 import json
+import bson
 import logging
 import pymongo
 import serial
@@ -26,28 +29,34 @@ from .mongoconnection import MongoConnection
 from .fmonconfig import FMonConfiguration
 
 from fmon import LOGGING_FORMAT
+from fmon import CONSOLE_FORMAT
 from fmon import DC2
 
 class Fmon():
     def __init__(self):
         # set up logging
-        logging.basicConfig(format=LOGGING_FORMAT)
-        fmt = logging.Formatter(LOGGING_FORMAT)
+        ffmt = logging.Formatter(LOGGING_FORMAT)
+        cfmt = logging.Formatter(CONSOLE_FORMAT)
         ch = logging.StreamHandler()
-        ch.setFormatter(fmt)
-        ch.setLevel(logging.WARNING)
+        ch.setFormatter(cfmt)
+        ch.setLevel(logging.DEBUG)
+        
         fh = logging.FileHandler('fmon.log')
-        fh.setFormatter(fmt)
+        fh.setFormatter(ffmt)
         fh.setLevel(logging.DEBUG)
 
         self.logger = logging.getLogger('FMon')
+        
         self.logger.addHandler(ch)
         self.logger.addHandler(fh)
+        
         self.logger.debug('Connecting to db')
         self.mc = MongoConnection('localhost', 27017, '', '')
         self.fmc = FMonConfiguration(self.mc)
+
         self.logger.debug('Opening serial')
-        self.ser = serial.Serial(port=self.fmc.port, baudrate=self.fmc.baudrate)
+        self.ser = serial.Serial(port=self.fmc.port,
+                                 baudrate=self.fmc.baudrate)
 
     def poll(self):
         self.ser.write(DC2)
@@ -56,7 +65,7 @@ class Fmon():
 
     def poll_loop(self):
         self.poll()
-        Timer(5, self.poll, ()).start()
+        Timer(5, self.poll_loop, ()).start()
 
     def get_line(self):
         line = self.ser.readline().decode('utf-8').strip()
@@ -65,14 +74,18 @@ class Fmon():
 
     def listen(self):
         json_ob = None
+        line = None
         while True:
             try:
-                json_ob = json.loads(self.get_line())
+                line = self.get_line()
+                json_ob = json.loads(line)
+                self.process_data(json_ob)
             except ValueError as ve:
-                self.logger.error('Probably not JSON: {0}'.format(ve))
-            self.process_data(json_ob)
+                self.logger.error('Probably not JSON: {0}\n'.format(ve) +
+                                  'Offending line: {0}'.format(line))
 
     def process_data(self, json_ob):
+        self.logger.debug(json.dumps(json_ob))
         try:
             if 'Poll' in json_ob:
                 self.mc.timeseries_insert(json_ob['Poll'])
@@ -84,7 +97,12 @@ class Fmon():
             self.logger.error('Configuration Error: {0}'.format(ce))
 
 def start():
-    Timer(10, exit, (0,)).start()
+    print('creating fmon')
     f = Fmon()
+    l = logging.getLogger('FMon')
+    l.debug('Starting loop')
     f.poll_loop()
     f.listen()
+
+if __name__ == "__main__":
+    start()

@@ -1,5 +1,5 @@
 """
-Log timeseries sensor data from serial.
+Conveniently return config items as properties.
 Copyright (C) 2016 Amstore Corp.
 
 This program is free software; you can redistribute it and/or
@@ -36,3 +36,24 @@ class FMonConfiguration():
     @property
     def sensors(self):
         return self.config['sensors']
+
+    @property
+    def email_data(self):
+        return self.config['email']
+
+    @property
+    def email_server(self):
+        return self.email_data['server']
+    
+    @property
+    def email_sender(self):
+        return self.email_data['sender']
+
+    @property
+    def email_passwd(self):
+        return self.email_data['passwd']
+
+    @property
+    def email_recipients(self):
+        return self.email_data['recipients']
+

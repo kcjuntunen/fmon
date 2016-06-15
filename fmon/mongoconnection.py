@@ -74,9 +74,15 @@ class MongoConnection():
                 self.logger.error('PyMongo error: {0}'.format(pme))
         return self._timeseries_data
 
+    def has_hour(self, hour):
+        res = self.timeseries_data.find_one({'ts_hour': hour})
+        if res is not None:
+            return True
+        return False
+
     @property
     def event_data(self):
-        if self._event_data is None:            
+        if self._event_data is None:
             try:
                 ed = self.database.eventdata
                 self._event_data = ed
@@ -102,17 +108,58 @@ class MongoConnection():
     def current_second(self):
         s = datetime.datetime.now().second
         return s
-            
+
+    def create_insert_payloads(self, json_ob):
+        payloads = []
+        config = self.config_data.find_one()
+        for sensor in config['sensors']:
+            name = sensor['sensor']
+            h = self.current_hour
+            m = self.current_minute
+            s = self.current_second
+            payload = {
+                'ts_hour': h,
+                'name': name,
+                'values': { str(m): 
+                    [ json_ob[name], ] }
+            }
+            payloads.append(payload)
+        return payloads
+
+    # TODO: use an upsert instead
     def timeseries_insert(self, data):
-        payload = {}
-        if 'Poll' in data:
-            data = data['Poll']
-        self.logger.debug('Inserting {0}'.format(data))
-        payload['ts_hour'] = self.current_hour
-        self.timeseries_data.insert_one(data)
+        if self.has_hour(self.current_hour):
+            self._update(data)
+        else:
+            self._insert(data)
+
+    def _update(self, json_ob):
+        payloads = []
+        config = self.config_data.find_one()
+        for sensor in config['sensors']:
+            name = sensor['sensor']
+            h = self.current_hour
+            m = str(self.current_minute)
+            s = str(self.current_second)
+            criteria = {
+                'ts_hour': h,
+                'name': name}
+            update = { '$push': { 'values.{}'.format(m): json_ob[name] } }
+            try:
+                self.timeseries_data.update_one(criteria, update)
+            except pymongo.errors.PyMongoError as pme:
+                self.logger.error('PyMongoError: {0}'.format(pme))
+
+    def _insert(self, data):
+        payloads = self.create_insert_payloads(data)
+        try:
+            self.timeseries_data.insert_many(payloads)
+        except pymongo.errors.PyMongoError as pme:
+            self.logger.error('PyMongoError: {0}'.format(pme))
 
     def event_insert(self, data):
         if 'Event' in data:
             data = data['Event']
+        data['ts'] = datetime.datetime.now()
         self.logger.debug('Inserting {0}'.format(data))
         self.event_data.insert_one(data)

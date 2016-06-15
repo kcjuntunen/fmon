@@ -1,9 +1,13 @@
 from unittest import TestCase
 from fmon.mongoconnection import MongoConnection
+from fmon import fmon
+
+import json
 
 class TestCreate(TestCase):
     def setUp(self):
         self.mc = MongoConnection('localhost', 27017, '', '')
+        self.fm = fmon.Fmon()
 
     def test_connection(self):
         self.assertIsNotNone(self.mc.connection)
@@ -18,19 +22,8 @@ class TestCreate(TestCase):
         self.assertIsNotNone(self.mc.timeseries_data)
 
     def test_timeseries_insert(self):
-        self.mc.timeseries_insert(
-            { "Poll":
-              { "hPa": 111,
-                "tempF": 11,
-                "light": 111
-              }
-            })
-
-        self.mc.timeseries_insert(
-              { "hPa": 111,
-                "tempF": 11,
-                "light": 111
-              })
+        j = json.loads(""" { "hPa": 111, "tempF": 11, "light": 111 } """)
+        self.mc.timeseries_insert(j)
 
     def test_event_insert(self):
         self.mc.event_insert({ "Event":
@@ -43,3 +36,15 @@ class TestCreate(TestCase):
               { "type": "PIR reset",
                 "value": 0
               })
+
+    def test_create_sensor_payloads(self):
+        import json
+        x = json.loads( """{"hPa": 1000, "tempF": 72, "light": 200}""" )
+        y = self.mc.create_insert_payloads(x)
+        self.fm.logger.debug(y)
+
+    def test_has_hour(self):
+        import datetime
+        x = datetime.datetime(1979, 11, 6)
+        self.assertTrue(self.mc.has_hour(self.mc.current_hour))
+        self.assertFalse(self.mc.has_hour(x))

@@ -25,7 +25,7 @@ setup(name='Fixture Monitor',
       ],
       include_package_data=True,
       zip_safe=False,
-      scripts=['bin/arduino-log'],
+      scripts=['bin/fmon'],
       test_suite='nose.collector',
       tests_require=['nose'],
 )
