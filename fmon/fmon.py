@@ -1,5 +1,5 @@
 """
-Mongo connection for fmon.
+startpoint
 Copyright (C) 2016 Amstore Corp.
 
 This program is free software; you can redistribute it and/or
@@ -35,21 +35,7 @@ from fmon import DC2
 class Fmon():
     def __init__(self):
         # set up logging
-        ffmt = logging.Formatter(LOGGING_FORMAT)
-        cfmt = logging.Formatter(CONSOLE_FORMAT)
-        ch = logging.StreamHandler()
-        ch.setFormatter(cfmt)
-        ch.setLevel(logging.DEBUG)
-        
-        fh = logging.FileHandler('fmon.log')
-        fh.setFormatter(ffmt)
-        fh.setLevel(logging.DEBUG)
-
-        self.logger = logging.getLogger('FMon')
-        
-        self.logger.addHandler(ch)
-        self.logger.addHandler(fh)
-        
+        self.start_logging()
         self.logger.debug('Connecting to db')
         self.mc = MongoConnection('localhost', 27017, '', '')
         self.fmc = FMonConfiguration(self.mc)
@@ -58,6 +44,22 @@ class Fmon():
         self.ser = serial.Serial(port=self.fmc.port,
                                  baudrate=self.fmc.baudrate)
 
+    def start_logging(self):
+        self.logger = logging.getLogger('Fmon')
+        self.logger.setLevel(logging.DEBUG)
+        ffmt = logging.Formatter(LOGGING_FORMAT)
+        cfmt = logging.Formatter(CONSOLE_FORMAT)
+        ch = logging.StreamHandler()
+        ch.setFormatter(cfmt)
+        ch.setLevel(logging.ERROR)
+        
+        fh = logging.FileHandler('fmon.log')
+        fh.setFormatter(ffmt)
+        fh.setLevel(logging.DEBUG)
+        
+        self.logger.addHandler(ch)
+        self.logger.addHandler(fh)
+        
     def poll(self):
         self.ser.write(DC2)
         self.ser.flush()
@@ -68,9 +70,7 @@ class Fmon():
         Timer(5, self.poll_loop, ()).start()
 
     def get_line(self):
-        line = self.ser.readline().decode('utf-8').strip()
-        self.logger.debug(line)
-        return line
+        return self.ser.readline().decode('utf-8').strip()
 
     def listen(self):
         json_ob = None
