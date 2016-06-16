@@ -30,6 +30,7 @@ class MongoConnection():
         self._timeseries_data = None
         self._event_data = None
         self._config_data = None
+        self._alerts = None
         self.logger = logging.getLogger('FMon')
 
     @property
@@ -63,6 +64,15 @@ class MongoConnection():
             except pymongo.errors.PyMongoError as pme:
                 self.logger.error('PyMongo error: {0}'.format(pme))
         return self._config_data
+
+    @property
+    def alerts(self):
+        if self._alerts is None:
+            try:
+                self._alerts = self.database.alerts
+            except pymongo.errors.PyMongoError as pme:
+                self.logger.error('PyMongo error: {0}'.format(pme))
+        return self._alerts
 
     @property
     def timeseries_data(self):

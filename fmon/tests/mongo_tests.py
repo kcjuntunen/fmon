@@ -48,3 +48,8 @@ class TestCreate(TestCase):
         x = datetime.datetime(1979, 11, 6)
         self.assertTrue(self.mc.has_hour(self.mc.current_hour))
         self.assertFalse(self.mc.has_hour(x))
+
+    def test_get_alerts(self):
+        c = self.mc.alerts.find()
+        self.assertEqual(c[0]['sensor'], 'light')
+        self.assertEqual(c[1]['recipients'][0], 'kcjuntunen@amstore.com')

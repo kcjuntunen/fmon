@@ -20,11 +20,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 class FMonConfiguration():
     def __init__(self, DbClass):
         self._config_data = DbClass.config_data
+        self._alerts = DbClass.alerts
 
     @property
     def config(self):
-        return self._config_data.find_one() 
-        
+        return self._config_data.find_one()
+
+    @property
+    def alerts(self):
+        return self._alerts.find()
+
     @property
     def port(self):
         return self.config['serial']['port']
@@ -40,11 +45,14 @@ class FMonConfiguration():
     @property
     def email_data(self):
         return self.config['email']
+    @property
+    def alerts(self):
+        return self._alerts
 
     @property
     def email_server(self):
         return self.email_data['server']
-    
+
     @property
     def email_sender(self):
         return self.email_data['sender']
@@ -52,8 +60,3 @@ class FMonConfiguration():
     @property
     def email_passwd(self):
         return self.email_data['passwd']
-
-    @property
-    def email_recipients(self):
-        return self.email_data['recipients']
-
