@@ -126,29 +126,29 @@ class MongoConnection():
             payloads.append(payload)
         return payloads
 
-    # TODO: use an upsert instead
     def timeseries_insert(self, data):
-        if self.has_hour(self.current_hour):
-            self._update(data)
-        else:
-            self._insert(data)
-
+        self._update(data)
+        # if self.has_hour(self.current_hour):
+        #     self._update(data)
+        # else:
+        #     self._insert(data)
+    
     def _update(self, json_ob):
         payloads = []
         config = self.config_data.find_one()
+        bulkoperation = self.timeseries_data.initialize_unordered_bulk_op()
         for sensor in config['sensors']:
             name = sensor['sensor']
             h = self.current_hour
             m = str(self.current_minute)
             s = str(self.current_second)
-            criteria = {
-                'ts_hour': h,
-                'name': name}
+            criteria = { 'ts_hour': h, 'name': name}
             update = { '$push': { 'values.{}'.format(m): json_ob[name] } }
-            try:
-                self.timeseries_data.update_one(criteria, update)
-            except pymongo.errors.PyMongoError as pme:
-                self.logger.error('PyMongoError: {0}'.format(pme))
+            r = bulkoperation.find(criteria).upsert().update(update)
+        try:
+            bulkoperation.execute()
+        except pymongo.errors.PyMongoError as pme:
+            self.logger.error('PyMongoError: {0}'.format(pme))
 
     def _insert(self, data):
         payloads = self.create_insert_payloads(data)
