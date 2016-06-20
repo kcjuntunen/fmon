@@ -6,8 +6,8 @@ class TestCreate(TestCase):
     def setUp(self):
         self.fmc = FMonConfiguration(
             MongoConnection('localhost', 27017, '', ''))
-        
-    def test_serial_port(self):        
+
+    def test_serial_port(self):
         self.assertEqual(self.fmc.port, '/dev/ttyACM0')
         self.assertEqual(self.fmc.baudrate, 115200)
 
@@ -21,3 +21,8 @@ class TestCreate(TestCase):
 
         self.assertEqual(sensors[2]['sensor'], 'tempF')
         self.assertEqual(sensors[2]['type'], 'timeseries')
+
+    def test_id(self):
+        self.assertEqual(self.fmc.id, "6b5c8085-da71-4ecf-b474-eaef6afdc45d")
+        self.assertEqual(self.fmc.location, "My Living Room")
+        self.assertEqual(self.fmc.fixture, "Desktop Computer")

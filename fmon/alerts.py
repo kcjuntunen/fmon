@@ -50,13 +50,17 @@ class Alert():
 
     @property
     def ok_to_send(self):
-        dow = datetime.today().weekday()
+        dow = datetime.today().weekday()y
         nw = datetime.now()
-        t = (nw.hour * 60) + nw.minute
-        if (int(self.limits['days']) & dow) != dow:
-            return False
-        if (t > self.limits['daystart'] and
-            t < self.limits['dayend']):
+        t = float((nw.hour * 60) + nw.minute)
+        return self.agreeable_day(dow) and self.within_range(t)
+
+    def agreeable_day(self, day_of_week):
+        return (int(self.limits['days']) & day_of_week) == day_of_week
+
+    def within_range(self, minute_of_day):
+        if (minute_of_day > self.limits['daystart'] and
+            minute_of_day < self.limits['dayend']):
             return True
         return False
 
@@ -100,10 +104,13 @@ class Alerts():
 
     def send_alerts(self, json_ob):
         emailconf = self._config.email_data
+        nw = datetime.now().strftime('%H:%M %B %d, %Y')
         for alert in self.alert_list:
             if (json_ob[alert.sensor] < alert.range[0] and
                 json_ob[alert.sensor] > alert.range[1] and
                 alert.active and alert.ok_to_send):
+                msg = alert.message.format(nw, self._config.location,
+                                           self._config.fixture)
                 send_email(emailconf['server'], emailconf['sender'],
                            emailconf['passwd'], alert.recipients,
                            str(alert), alert.message)

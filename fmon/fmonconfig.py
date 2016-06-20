@@ -39,6 +39,18 @@ class FMonConfiguration():
         return int(self.config['serial']['baudrate'])
 
     @property
+    def id(self):
+        return self.config['id_info']['uuid']
+
+    @property
+    def location(self):
+        return self.config['id_info']['store']
+
+    @property
+    def fixture(self):
+        return self.config['id_info']['fixture']
+
+    @property
     def sensors(self):
         return self.config['sensors']
 
