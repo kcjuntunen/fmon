@@ -43,11 +43,12 @@ class TestCreate(TestCase):
         y = self.mc.create_insert_payloads(x)
         self.fm.logger.debug(y)
 
-    def test_has_hour(self):
-        import datetime
-        x = datetime.datetime(1979, 11, 6)
-        self.assertTrue(self.mc.has_hour(self.mc.current_hour))
-        self.assertFalse(self.mc.has_hour(x))
+    # This is unnecessary because of upserts.
+    # def test_has_hour(self):
+    #     import datetime
+    #     x = datetime.datetime(1979, 11, 6)
+    #     self.assertTrue(self.mc.has_hour(self.mc.current_hour))
+    #     self.assertFalse(self.mc.has_hour(x))
 
     def test_get_alerts(self):
         c = self.mc.alerts.find()

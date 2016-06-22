@@ -1,4 +1,5 @@
 from unittest import TestCase
+from unittest.mock import patch
 
 from datetime import datetime
 import json
@@ -18,13 +19,13 @@ class TestCreate(TestCase):
 
     def test_get_alerts(self):
         al = self.alerts.alert_list
-        self.assertIsInstance(al, list,
+        self.assertIsInstance(al, set,
                               msg='This is a {}.'.format(type(al)))
 
     def test_get_alert_item(self):
-        al = self.alerts.alert_list
-        self.assertEqual(al[0].sensor, 'light')
-        self.assertEqual(al[1].recipients[0],
+        alight, atemp = self.alerts.alert_list
+        self.assertIsNotNone(alight.sensor)
+        self.assertEqual(atemp.recipients[0],
                          'kcjuntunen@amstore.com')
 
     def test_query_alert_count(self):
@@ -43,40 +44,44 @@ class TestCreate(TestCase):
     def test_get_alert_limits(self):
         for alert in self.alerts:
             if alert.sensor == 'light':
-                self.assertEqual(alert.limits['days'], 124)
+                self.assertEqual(alert.limits['days'], 0b1111100)
             if alert.sensor == 'tempF':
-                self.assertEqual(alert.limits['days'], 3)
+                self.assertEqual(alert.limits['days'], 0b0000111)
 
-    def test_check_ok_to_send(self):
+    @patch('fmon.alerts.datetime')
+    def test_check_ok_to_send(self, mock_date):
+        mock_date.today.return_value = datetime(2016, 6, 20, 10, 0)
+        mock_date.now.return_value = datetime(2016, 6, 20, 10, 0)
         for alert in self.alerts:
             if alert.sensor == 'light':
                 self.assertTrue(alert.ok_to_send, msg="light should be true")
             if alert.sensor == 'tempF':
                 self.assertFalse(alert.ok_to_send, msg= "tempF should be f")
-
+            
     def test_send_alerts(self):
-        jo = json.loads('{"light": 200, "tempF": 95}')
+        jo = json.loads('{"light": 800, "tempF": 95}')
         self.alerts.send_alerts(jo)
 
-    def test_agreeable_day(self):
-        a = [alert for alert in self.alerts]
+    def test_agreeable_day(self):        
+        a = {alert.sensor: alert for alert in self.alerts}
+        print(a)
         self.assertTrue(
-            a[1].agreeable_day(2))
+            a['tempF'].agreeable_day(5))
 
         self.assertTrue(
-            a[1].agreeable_day(1))
+            a['tempF'].agreeable_day(6))
 
         self.assertFalse(
-            a[1].agreeable_day(16))
+            a['tempF'].agreeable_day(3))
 
         self.assertTrue(
-            a[0].agreeable_day(64))
+            a['light'].agreeable_day(2))
 
         self.assertTrue(
-            a[0].agreeable_day(32))
+            a['light'].agreeable_day(3))
 
         self.assertFalse(
-            a[0].agreeable_day(1))
+            a['light'].agreeable_day(6))
 
     def test_within_range(self):
         a = [alert for alert in self.alerts]
