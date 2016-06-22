@@ -8,6 +8,9 @@ from fmon.mongoconnection import MongoConnection
 from fmon.fmonconfig import FMonConfiguration
 from fmon.alerts import Alerts
 
+light_trangressing = json.loads('{"light": 800, "tempF": 95}')
+light_not_transgressing = json.loads('{"light": 200, "tempF": 95}')
+
 class TestCreate(TestCase):
     def setUp(self):
         self.mc = MongoConnection('localhost', 27017, '', '')
@@ -55,12 +58,19 @@ class TestCreate(TestCase):
         for alert in self.alerts:
             if alert.sensor == 'light':
                 self.assertTrue(alert.ok_to_send, msg="light should be true")
+                alert.sent = True
+                self.assertFalse(alert.ok_to_send)
             if alert.sensor == 'tempF':
                 self.assertFalse(alert.ok_to_send, msg= "tempF should be f")
             
     def test_send_alerts(self):
-        jo = json.loads('{"light": 800, "tempF": 95}')
-        self.alerts.send_alerts(jo)
+        a = {alert.sensor: alert for alert in self.alerts}
+        self.alerts.send_alerts(light_trangressing)
+        self.assertTrue(a['light'].sent)
+        self.assertFalse(a['tempF'].sent)
+
+        self.alerts.send_alerts(light_not_transgressing)
+        self.assertFalse(a['light'].sent)
 
     def test_agreeable_day(self):        
         a = {alert.sensor: alert for alert in self.alerts}
@@ -83,11 +93,26 @@ class TestCreate(TestCase):
         self.assertFalse(
             a['light'].agreeable_day(6))
 
-    def test_within_range(self):
+    def test_within_workday(self):
         a = [alert for alert in self.alerts]
-        self.assertTrue(a[0].within_range(800))
-        self.assertFalse(a[0].within_range(1200))
-        self.assertFalse(a[0].within_range(200))
-        self.assertTrue(a[1].within_range(800))
-        self.assertFalse(a[1].within_range(1200))
-        self.assertFalse(a[1].within_range(200))
+        self.assertTrue(a[0].within_workday(800))
+        self.assertFalse(a[0].within_workday(1200))
+        self.assertFalse(a[0].within_workday(200))
+        self.assertTrue(a[1].within_workday(800))
+        self.assertFalse(a[1].within_workday(1200))
+        self.assertFalse(a[1].within_workday(200))
+
+    def test_equality(self):
+        a = {alert.sensor: alert for alert in self.alerts}
+        x = a['light']
+        y = a['light']
+        y.sent = True
+        self.assertEqual(x, y)
+
+    def test_transgressing_range(self):
+        a = {alert.sensor: alert for alert in self.alerts}
+        self.assertFalse(a['light'].
+                         transgressing_range(light_not_transgressing))
+        self.assertTrue(a['light'].transgressing_range(light_trangressing))
+        self.assertFalse(a['tempF'].
+                         transgressing_range(light_not_transgressing))

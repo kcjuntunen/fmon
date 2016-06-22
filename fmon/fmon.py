@@ -16,9 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """
-import sys
-print(sys.path)
-
 import json
 import bson
 import logging
@@ -27,6 +24,7 @@ import serial
 from threading import Timer, Thread
 from .mongoconnection import MongoConnection
 from .fmonconfig import FMonConfiguration
+from .alerts import Alerts
 
 from fmon import LOGGING_FORMAT
 from fmon import CONSOLE_FORMAT
@@ -43,6 +41,7 @@ class Fmon():
         self.logger.debug('Connecting to db')
         self.mc = MongoConnection('localhost', 27017, '', '')
         self.fmc = FMonConfiguration(self.mc)
+        self.alerts = Alerts(self.mc, self.fmc)
 
         self.logger.debug('Opening serial')
         self.ser = serial.Serial(port=self.fmc.port,
@@ -103,6 +102,7 @@ class Fmon():
         try:
             if 'Poll' in json_ob:
                 self.mc.timeseries_insert(json_ob['Poll'])
+                self.alerts.send_alerts(json_ob['Poll'])
             if 'Event' in json_ob:
                 self.mc.event_insert(json_ob['Event'])
         except pymongo.errors.ConnectionFailure as cf:
