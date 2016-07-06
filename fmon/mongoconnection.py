@@ -123,17 +123,18 @@ class MongoConnection():
         payloads = []
         config = self.config_data.find_one()
         for sensor in config['sensors']:
-            name = sensor['sensor']
-            h = self.current_hour
-            m = self.current_minute
-            s = self.current_second
-            payload = {
-                'ts_hour': h,
-                'name': name,
-                'values': { str(m): 
-                    [ json_ob[name], ] }
-            }
-            payloads.append(payload)
+            if sensor['type'] == 'timeseries':
+                name = sensor['sensor']
+                h = self.current_hour
+                m = self.current_minute
+                s = self.current_second
+                payload = {
+                    'ts_hour': h,
+                    'name': name,
+                    'values': { str(m): 
+                                [ json_ob[name], ] }
+                }
+                payloads.append(payload)
         return payloads
 
     def timeseries_insert(self, data):
@@ -148,13 +149,14 @@ class MongoConnection():
         config = self.config_data.find_one()
         bulkoperation = self.timeseries_data.initialize_unordered_bulk_op()
         for sensor in config['sensors']:
-            name = sensor['sensor']
-            h = self.current_hour
-            m = str(self.current_minute)
-            s = str(self.current_second)
-            criteria = { 'ts_hour': h, 'name': name}
-            update = { '$push': { 'values.{}'.format(m): json_ob[name] } }
-            r = bulkoperation.find(criteria).upsert().update(update)
+            if sensor['type'] == 'timeseries':
+                name = sensor['sensor']
+                h = self.current_hour
+                m = str(self.current_minute)
+                s = str(self.current_second)
+                criteria = { 'ts_hour': h, 'name': name}
+                update = { '$push': { 'values.{}'.format(m): json_ob[name] } }
+                r = bulkoperation.find(criteria).upsert().update(update)
         try:
             bulkoperation.execute()
         except pymongo.errors.PyMongoError as pme:
