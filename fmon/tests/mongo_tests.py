@@ -4,6 +4,8 @@ from fmon import fmon
 
 import json
 
+import testdata
+
 class TestCreate(TestCase):
     def setUp(self):
         self.mc = MongoConnection('localhost', 27017, '', '')
@@ -22,7 +24,8 @@ class TestCreate(TestCase):
         self.assertIsNotNone(self.mc.timeseries_data)
 
     def test_timeseries_insert(self):
-        j = json.loads(""" { "hPa": 111, "tempF": 11, "light": 111 } """)
+        self.fm.logger.error(testdata.json_string)
+        j = json.loads(testdata.json_string)
         self.mc.timeseries_insert(j)
 
     def test_event_insert(self):
@@ -39,7 +42,7 @@ class TestCreate(TestCase):
 
     def test_create_sensor_payloads(self):
         import json
-        x = json.loads( """{"hPa": 1000, "tempF": 72, "light": 200}""" )
+        x = json.loads(testdata.json_string)
         y = self.mc.create_insert_payloads(x)
         self.fm.logger.debug(y)
 
@@ -52,5 +55,5 @@ class TestCreate(TestCase):
 
     def test_get_alerts(self):
         c = self.mc.alerts.find()
-        self.assertEqual(c[0]['sensor'], 'light')
-        self.assertEqual(c[1]['recipients'][0], 'kcjuntunen@amstore.com')
+        self.assertEqual(c[0]['sensor'], testdata.alerts[0]['sensor'])
+        self.assertEqual(c[1]['recipients'][0], testdata.alerts[0]['recipients'][0])
