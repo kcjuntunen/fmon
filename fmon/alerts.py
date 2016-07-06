@@ -188,7 +188,7 @@ class Alerts():
         nw = datetime.now().strftime('%H:%M %B %d, %Y')
         for alert in self.alert_list:
             self.logger.debug('({}).sent is set to {}'.
-                              format(alert.split(' ')[0], alert.sent))
+                              format(str(alert).split()[0], alert.sent))
             if alert.transgressing_range(json_ob):
                 self.logger.debug('send_alerts: {} transgressing'.
                                   format(alert))
