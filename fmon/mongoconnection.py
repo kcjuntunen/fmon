@@ -152,10 +152,10 @@ class MongoConnection():
             if sensor['type'] == 'timeseries':
                 name = sensor['sensor']
                 h = self.current_hour
-                m = str(self.current_minute)
-                s = str(self.current_second)
+                #m = str(self.current_minute)
+                #s = str(self.current_second)
                 criteria = { 'ts_hour': h, 'name': name}
-                update = { '$push': { 'values.{}'.format(m): json_ob[name] } }
+                update = { '$push': { 'values': json_ob[name] } }
                 r = bulkoperation.find(criteria).upsert().update(update)
         try:
             bulkoperation.execute()
