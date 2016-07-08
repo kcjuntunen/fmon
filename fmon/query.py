@@ -64,6 +64,7 @@ def print_header(fmt, header):
     print(labelline)
     print('-' * len(labelline))
 
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--datetime', help='specify an hour')
@@ -351,11 +352,11 @@ class ArduinoLog():
         for v in self.hour_list(sensor, dt):
             minute, second = calculate_time(cnt)
             datestring = '{:d}-{:d}-{:d} {:2d}:{:02d}:{:02d}'.format(dt.year,
-                                                                        dt.month,
-                                                                        dt.day,
-                                                                        dt.hour,
-                                                                        minute,
-                                                                        second)
+                                                                     dt.month,
+                                                                     dt.day,
+                                                                     dt.hour,
+                                                                     minute,
+                                                                     second)
             dt = parser.parse(datestring)
             res.append({'name': sensor, 'ts': dt, 'value': v})
             cnt += 1
