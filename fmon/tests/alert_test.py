@@ -70,7 +70,7 @@ class TestCreate(TestCase):
         msg = 'true: {}'.format(testdata.light_transgressing)
         self.assertFalse(a[testdata.alerts[1]['sensor']].sent, msg=msg)
 
-        self.alerts.send_alerts(light_not_transgressing)
+        self.alerts.send_alerts(testdata.light_not_transgressing)
         msg = 'true: {}'.format(testdata.light_transgressing)
         self.assertFalse(a[testdata.alerts[0]['sensor']].sent)
 
