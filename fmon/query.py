@@ -232,7 +232,7 @@ class ArduinoLog():
     def print_hour_table(self, dt=current_hour()):
         header = ('Sensor', 'Time', 'σ', 'Avg', 'Max', 'Min')
         hfmt = "{:^15s}|{:^10s}|{:^10s}|{:^10s}|{:^10s}|{:^10s}"
-        fmt = "{:15s}|{:10s}|{:10f}|{:10f}|{:10f}|{:10f}"
+        fmt = "{:15s}|{:10s}|{:10.3f}|{:10.3f}|{:10.3f}|{:10.3f}"
         labelline = hfmt.format(*header)
         print(labelline)
         print('-' * len(labelline))
