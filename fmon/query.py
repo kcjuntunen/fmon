@@ -31,7 +31,7 @@ SPH = SPM * 60
 
 def current_hour():
     """
-    Return the current hour with the least significant 
+    Return the current hour with the least significant
     time segments set to 0
     """
     now = datetime.now()
@@ -50,13 +50,19 @@ def round_to_hour(dt):
 
 def calculate_time(sample_number):
     """
-    Estimate the second a sample was taken based on 
+    Estimate the second a sample was taken based on
     the index (SAMPLE_NUMBER) of a sample.
     """
     minute = sample_number / SPM
     second = ceil((minute - trunc(minute)) * 60)
     return int(minute), int(second)
 
+
+def print_header(fmt, header):
+    labelline = fmt.format(*header)
+    print('-' * len(labelline))
+    print(labelline)
+    print('-' * len(labelline))
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -263,62 +269,6 @@ class ArduinoLog():
         """
         return(np.std(self.hour_list(sensor, dt)))
 
-    def print_events(self, dt=current_hour()):
-        """
-        Print a table of events in a given (DT) hour.
-        """
-        header = ('Sensor', 'Time', 'Values')
-        hfmt = '{:^15s}|{:^10s}|{:^10s}'
-        fmt = '{:15s}|{:10s}|{:10f}'
-        labelline = hfmt.format(*header)
-        print(labelline)
-        print('-' * len(labelline))
-        cnt = 0
-        for sensor in self.ev_sensors:
-            for event in self.hour_event_list(sensor, dt):
-                ev_ts = event['ts']
-                timestring = '{:2d}:{:02d}:{:02d}'.format(ev_ts.hour,
-                                                          ev_ts.minute,
-                                                          ev_ts.second)
-                data = (sensor, timestring, event['value'])
-                print(fmt.format(*data))
-                cnt += 1
-
-    def print_values(self, sensor, dt=current_hour()):
-        header = ('Sensor', 'Time', 'Values')
-        hfmt = '{:^15s}|{:^19s}|{:^10s}'
-        fmt = '{:15s}|{:19s}|{:10f}'
-        print(hfmt.format(*header))
-        cnt = 0
-        for v in self.hour_list(sensor, dt):
-            minute, second = calculate_time(cnt)
-            datestring = '{:d}-{:d}-{:d} {:2d}:{:02d}:{:02d}'.format(dt.year,
-                                                                        dt.month,
-                                                                        dt.day,
-                                                                        dt.hour,
-                                                                        minute,
-                                                                        second)
-            print(fmt.format(sensor, datestring, v))
-            cnt += 1
-
-    def print_hour_table(self, dt=current_hour()):
-        """
-        Print a table of statistics for a given (DT) hour from all sensors.
-        """
-        header = ('Sensor', 'Time', 'σ', 'Avg', 'Max', 'Min')
-        hfmt = '{:^15s}|{:^10s}|{:^10s}|{:^10s}|{:^10s}|{:^10s}'
-        fmt = '{:15s}|{:10s}|{:10.3f}|{:10.3f}|{:10.3f}|{:10.3f}'
-        labelline = hfmt.format(*header)
-        print(labelline)
-        print('-' * len(labelline))
-        for sensor in self.ts_sensors:
-            stats = self.hour_stats(sensor)
-            data = (sensor,
-                    dt.strftime('%Y/%m/%d'),
-                    self.std_hour(sensor, dt),
-                    stats['avg'], stats['max'], stats['min'])
-            print(fmt.format(*data))
-
     def count_matches(self, filter, collection):
         pipeline = [
             {
@@ -382,6 +332,83 @@ class ArduinoLog():
                          'timeseriesdata',
                          pipeline=pipeline,
                          explain=False)['result'][0]
+
+    def list_events(self, dt=current_hour()):
+        res = []
+        for sensor in self.ev_sensors:
+            for event in self.hour_event_list(sensor, dt):
+                ev_ts = event['ts']
+                data = (sensor, ev_ts, event['value'])
+                res.append(data)
+        return res
+
+    def list_values(self, sensor, dt=current_hour()):
+        """
+        Return a list of dicts with estimated timestamps.
+        """
+        res = []
+        cnt = 0
+        for v in self.hour_list(sensor, dt):
+            minute, second = calculate_time(cnt)
+            datestring = '{:d}-{:d}-{:d} {:2d}:{:02d}:{:02d}'.format(dt.year,
+                                                                        dt.month,
+                                                                        dt.day,
+                                                                        dt.hour,
+                                                                        minute,
+                                                                        second)
+            dt = parser.parse(datestring)
+            res.append({'name': sensor, 'ts': dt, 'value': v})
+            cnt += 1
+        return res
+
+    def print_values(self, sensor, dt=current_hour()):
+        header = ('Sensor', 'Time', 'Values')
+        hfmt = '{:^15s}|{:^19s}|{:^10s}'
+        print_header(hfmt, header)
+        fmt = '{:15s}|{:19s}|{:10f}'
+        for v in self.list_values(sensor, dt):
+            dt = v['ts']
+            datestring = '{:d}-{:d}-{:d} {:2d}:{:02d}:{:02d}'.format(dt.year,
+                                                                     dt.month,
+                                                                     dt.day,
+                                                                     dt.hour,
+                                                                     dt.minute,
+                                                                     dt.second)
+            print(fmt.format(sensor, datestring, v['value']))
+
+    def print_hour_table(self, dt=current_hour()):
+        """
+        Print a table of statistics for a given (DT) hour from all sensors.
+        """
+        header = ('Sensor', 'Time', 'σ', 'Avg', 'Max', 'Min')
+        hfmt = '{:^15s}|{:^10s}|{:^10s}|{:^10s}|{:^10s}|{:^10s}'
+        fmt = '{:15s}|{:10s}|{:10.3f}|{:10.3f}|{:10.3f}|{:10.3f}'
+        labelline = hfmt.format(*header)
+        print_header(hfmt, header)
+        for sensor in self.ts_sensors:
+            stats = self.hour_stats(sensor)
+            data = (sensor,
+                    dt.strftime('%Y/%m/%d'),
+                    self.std_hour(sensor, dt),
+                    stats['avg'], stats['max'], stats['min'])
+            print(fmt.format(*data))
+
+    def print_events(self, dt=current_hour()):
+        """
+        Print a table of events in a given (DT) hour.
+        """
+        header = ('Sensor', 'Time', 'Values')
+        hfmt = '{:^15s}|{:^10s}|{:^10s}'
+        print_header(hfmt, header)
+        fmt = '{:15s}|{:10s}|{:10f}'
+        for sensor in self.ev_sensors:
+            for event in self.hour_event_list(sensor, dt):
+                ev_ts = event['ts']
+                timestring = '{:2d}:{:02d}:{:02d}'.format(ev_ts.hour,
+                                                          ev_ts.minute,
+                                                          ev_ts.second)
+                data = (sensor, timestring, event['value'])
+                print(fmt.format(*data))
 
     def __str__(self):
         return self.db.name
