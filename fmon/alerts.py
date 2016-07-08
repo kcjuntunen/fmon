@@ -63,7 +63,7 @@ class Alert():
         return self.get_val('friendly_name')
 
     @property
-    def range(self):
+    def transgression_range(self):
         """ Range within which the alert is triggered. """
         return self.get_val('ltgt')
 
@@ -129,8 +129,10 @@ class Alert():
         return False
 
     def transgressing_range(self, dict_ob):
-        return ((dict_ob[self.sensor] < self.range[0]) and
-               (dict_ob[self.sensor] > self.range[1])) and self.active
+        self.logger.error(self.transgression_range)
+        lt, gt = self.transgression_range
+        return ((dict_ob[self.sensor] > lt) and
+               (dict_ob[self.sensor] < gt)) and self.active
 
     # def __eq__(self, other):
     #     return (self.sensor == other.sensor &
@@ -139,8 +141,8 @@ class Alert():
     #             self.limits == other.limits)
 
     def __repr__(self):
-        return ("<sensor:{!r}, range: {!r}, recipients: {!r}>"
-                .format(self.sensor, self.range, self.recipients))
+        return ("<sensor:{!r}, range:{!r}, recipients: {!r}>"
+                .format(self.sensor, self.transgression_range, self.recipients))
 
     def __str__(self):
         return "{} alert".format(self.friendly_name)
