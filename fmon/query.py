@@ -244,8 +244,31 @@ class ArduinoLog():
                     stats['avg'], stats['max'], stats['min'])
             print(fmt.format(*data))
 
-    # def std_hour(self, sensor, dt=current_hour()):
-    #     return(np.std(self.hour_list(sensor, dt)))
+    def count_matches(self, filter, collection):
+        pipeline = [
+            {
+                '$match': filter
+                },
+            {
+                '$group':
+                {
+                    '_id': None,
+                    'count':
+                    {
+                        '$sum': 1
+                        }
+                    }
+                }
+            ]
+        d = self.mc.arduinolog
+        try:
+            res = d.command('aggregate',
+                            collection,
+                            pipeline=pipeline,
+                            explain=False)['result'][0]
+            return res['count']
+        except IndexError as ie:
+            return 0
 
     def hour_stats(self, sensor, dt=current_hour()):
         pipeline = [
