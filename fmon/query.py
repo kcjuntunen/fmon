@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """
-from pymongo import MongoClient
+from pymongo import MongoClient, ASCENDING, DESCENDING
 from datetime import datetime
 from dateutil import parser
 from math import ceil, trunc
@@ -69,12 +69,12 @@ def execute(parsed_args):
 
 
 class ArduinoLog():
-    def __init__(self):
+    def __init__(self, db=MongoClient('localhost', 27017)):
         self._client = None
         self._database = None
         self._tsdata = None
         self._evdata = None
-        self._client = MongoClient('localhost', 27017)
+        self._client = db
 
     @property
     def mc(self):
@@ -160,7 +160,8 @@ class ArduinoLog():
     def latest_documents(self):
         filter = {}
         limit = len(self.ts_sensors)
-        sort = -1
+        sort = [('ts_hour', DESCENDING),
+                ('name', ASCENDING)]
         cursor = self.ts.find(filter=filter, limit=limit, sort=sort)
         return [d for d in cursor]
 
