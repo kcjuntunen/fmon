@@ -204,8 +204,8 @@ class ArduinoLog():
 
     def print_events(self, dt=current_hour()):
         header = ('Sensor', 'Time', 'Values')
-        hfmt = "{:^15s}|{:^10s}|{:^10s}"
-        fmt = "{:15s}|{:10s}|{:10f}"
+        hfmt = '{:^15s}|{:^10s}|{:^10s}'
+        fmt = '{:15s}|{:10s}|{:10f}'
         labelline = hfmt.format(*header)
         print(labelline)
         print('-' * len(labelline))
@@ -213,7 +213,7 @@ class ArduinoLog():
         for sensor in self.ev_sensors:
             for event in self.hour_event_list(sensor, dt):
                 ev_ts = event['ts']
-                timestring = "{:2d}:{:02d}:{:02d}".format(ev_ts.hour,
+                timestring = '{:2d}:{:02d}:{:02d}'.format(ev_ts.hour,
                                                           ev_ts.minute,
                                                           ev_ts.second)
                 data = (sensor, timestring, event['value'])
@@ -222,17 +222,17 @@ class ArduinoLog():
 
     def print_values(self, sensor, dt=current_hour()):
         header = ('Sensor', 'Time', 'Values')
-        hfmt = "{:^15s}|{:^10s}|{:^10s}"
-        fmt = "{:15s}|{:10s}|{:10f}"
-        datestring = "{:2d}:{:02d}".format(dt.hour, dt.minute)
+        hfmt = '{:^15s}|{:^10s}|{:^10s}'
+        fmt = '{:15s}|{:10s}|{:10f}'
+        datestring = '{:2d}:{:02d}'.format(dt.hour, dt.minute)
         print(hfmt.format(*header))
         for v in self.hour_list(sensor, dt):
             print(fmt.format(sensor, datestring, v))
 
     def print_hour_table(self, dt=current_hour()):
         header = ('Sensor', 'Time', 'σ', 'Avg', 'Max', 'Min')
-        hfmt = "{:^15s}|{:^10s}|{:^10s}|{:^10s}|{:^10s}|{:^10s}"
-        fmt = "{:15s}|{:10s}|{:10.3f}|{:10.3f}|{:10.3f}|{:10.3f}"
+        hfmt = '{:^15s}|{:^10s}|{:^10s}|{:^10s}|{:^10s}|{:^10s}'
+        fmt = '{:15s}|{:10s}|{:10.3f}|{:10.3f}|{:10.3f}|{:10.3f}'
         labelline = hfmt.format(*header)
         print(labelline)
         print('-' * len(labelline))
@@ -273,31 +273,31 @@ class ArduinoLog():
     def hour_stats(self, sensor, dt=current_hour()):
         pipeline = [
             {
-                "$match": {
-                    "name": sensor
+                '$match': {
+                    'name': sensor
                 }
             },
             {
-                "$match": {
-                    "ts_hour": {
-                        "$gte": dt
+                '$match': {
+                    'ts_hour': {
+                        '$gte': dt
                     }
                 }
             },
             {
-                "$unwind": "$values"
+                '$unwind': '$values'
             },
             {
-                "$group": {
-                    "_id": "$name",
-                    "min": {
-                        "$min": "$values"
+                '$group': {
+                    '_id': '$name',
+                    'min': {
+                        '$min': '$values'
                     },
-                    "max": {
-                        "$max": "$values"
+                    'max': {
+                        '$max': '$values'
                     },
-                    "avg": {
-                        "$avg": "$values"
+                    'avg': {
+                        '$avg': '$values'
                     }
                 }
             }
@@ -311,5 +311,5 @@ class ArduinoLog():
     def __str__(self):
         return self.db.name
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     execute(parse_args())
