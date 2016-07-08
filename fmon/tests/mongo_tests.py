@@ -24,7 +24,7 @@ class TestCreate(TestCase):
         self.assertIsNotNone(self.mc.timeseries_data)
 
     def test_timeseries_insert(self):
-        self.fm.logger.error(testdata.json_string)
+        #self.fm.logger.error(testdata.json_string)
         j = json.loads(testdata.json_string)
         self.mc.timeseries_insert(j)
 
