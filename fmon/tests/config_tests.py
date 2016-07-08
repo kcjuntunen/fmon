@@ -1,7 +1,7 @@
 from unittest import TestCase
 from fmon.mongoconnection import MongoConnection
 from fmon.fmonconfig import FMonConfiguration
-from dbconfig import config
+from testdata import config
 
 class TestCreate(TestCase):
     def setUp(self):

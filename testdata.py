@@ -1,60 +1,5 @@
 from random import randint
 import json
-config = {
-    "email" : {
-        "server" : "",
-        "sender" : "",
-        "passwd" : ""
-    },
-    "id_info" : {
-        "uuid" : "338e1134-4364-11e6-b3b2-080027d5fb8e",
-        "store" : "The office",
-        "fixture" : "a desk"
-    },
-    "sensors" :
-    [
-        {
-            "sensor" : "obstruction",
-            "type" : "timeseries"
-        },
-        {
-            "sensor" : "reed_switch2",
-            "type" : "event"
-        },
-        {
-            "sensor" : "light_level",
-            "type" : "timeseries"
-        },
-        {
-            "sensor" : "humidity",
-            "type" : "timeseries"
-        },
-        {
-            "sensor" : "temperature",
-            "type" : "timeseries"
-        },
-        {
-            "sensor" : "pressure",
-            "type" : "timeseries"
-        },
-        {
-            "sensor" : "PIR",
-            "type" : "event"
-        },
-        {
-            "sensor" : "volts",
-            "type" : "timeseries"
-        },
-        {
-            "sensor" : "amps",
-            "type" : "timeseries"
-        }
-    ],
-    "serial" : {
-        "port" : "/dev/ttyAMA0",
-        "baudrate" : 115200
-    }
-}
 
 config = {
     "email" : {
@@ -111,6 +56,62 @@ config = {
         "baudrate" : 115200
     }
 }
+
+# config = {
+#     "email" : {
+#         "server" : "",
+#         "sender" : "",
+#         "passwd" : ""
+#     },
+#     "id_info" : {
+#         "uuid" : "338e1134-4364-11e6-b3b2-080027d5fb8e",
+#         "store" : "The office",
+#         "fixture" : "a desk"
+#     },
+#     "sensors" :
+#     [
+#         {
+#             "sensor" : "obstruction",
+#             "type" : "timeseries"
+#         },
+#         {
+#             "sensor" : "reed_switch2",
+#             "type" : "event"
+#         },
+#         {
+#             "sensor" : "light_level",
+#             "type" : "timeseries"
+#         },
+#         {
+#             "sensor" : "humidity",
+#             "type" : "timeseries"
+#         },
+#         {
+#             "sensor" : "temperature",
+#             "type" : "timeseries"
+#         },
+#         {
+#             "sensor" : "pressure",
+#             "type" : "timeseries"
+#         },
+#         {
+#             "sensor" : "PIR",
+#             "type" : "event"
+#         },
+#         {
+#             "sensor" : "volts",
+#             "type" : "timeseries"
+#         },
+#         {
+#             "sensor" : "amps",
+#             "type" : "timeseries"
+#         }
+#     ],
+#     "serial" : {
+#         "port" : "/dev/ttyAMA0",
+#         "baudrate" : 115200
+#     }
+# }
 
 _al1 = {
     "active" : True,
@@ -142,7 +143,7 @@ json_string = '{' + ','.join(['"{}": {}'.format(sensor['sensor'], randint(-100, 
 js = json.loads(json_string)
 j1 = js.copy()
 j1['light_level'] = 950
-light_trangressing = j1
+light_transgressing = j1
 j2 = js.copy()
 j2['light_level'] = 200
 light_not_transgressing = j2

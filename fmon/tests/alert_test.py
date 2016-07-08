@@ -64,11 +64,14 @@ class TestCreate(TestCase):
             
     def test_send_alerts(self):
         a = {alert.sensor: alert for alert in self.alerts}
-        self.alerts.send_alerts(testdata.light_trangressing)
-        self.assertTrue(a[testdata.alerts[0]['sensor']].sent)
-        self.assertFalse(a[testdata.alerts[1]['sensor']].sent)
+        self.alerts.send_alerts(testdata.light_transgressing)
+        msg = 'false: {}'.format(testdata.light_transgressing)
+        self.assertTrue(a[testdata.alerts[0]['sensor']].sent, msg=msg)
+        msg = 'true: {}'.format(testdata.light_transgressing)
+        self.assertFalse(a[testdata.alerts[1]['sensor']].sent, msg=msg)
 
         self.alerts.send_alerts(light_not_transgressing)
+        msg = 'true: {}'.format(testdata.light_transgressing)
         self.assertFalse(a[testdata.alerts[0]['sensor']].sent)
 
     def test_agreeable_day(self):        
@@ -106,12 +109,17 @@ class TestCreate(TestCase):
         x = a[testdata.alerts[0]['sensor']]
         y = a[testdata.alerts[0]['sensor']]
         y.sent = True
+        
+        self.assertIsNotNone(x)
+        self.assertIsNotNone(y)
         self.assertEqual(x, y)
 
     def test_transgressing_range(self):
         a = {alert.sensor: alert for alert in self.alerts}
+        msg_tr = 'false: {}'.format(testdata.light_transgressing)
+        msg_ntr = 'true: {}'.format(testdata.light_not_transgressing)
         self.assertFalse(a[testdata.alerts[0]['sensor']].
-                         transgressing_range(testdata.light_not_transgressing))
-        self.assertTrue(a[testdata.alerts[0]['sensor']].transgressing_range(testdata.light_trangressing))
+                         transgressing_range(testdata.light_not_transgressing), msg=msg_ntr)
+        self.assertTrue(a[testdata.alerts[0]['sensor']].transgressing_range(testdata.light_transgressing), msg=msg_tr)
         self.assertFalse(a[testdata.alerts[1]['sensor']].
-                         transgressing_range(testdata.light_not_transgressing))
+                         transgressing_range(testdata.light_not_transgressing), msg=msg_ntr)
