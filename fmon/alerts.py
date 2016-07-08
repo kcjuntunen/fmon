@@ -129,7 +129,6 @@ class Alert():
         return False
 
     def transgressing_range(self, dict_ob):
-        self.logger.error(self.transgression_range)
         lt, gt = self.transgression_range
         return ((dict_ob[self.sensor] > lt) and
                (dict_ob[self.sensor] < gt)) and self.active
