@@ -30,18 +30,29 @@ SPH = SPM * 60
 
 
 def current_hour():
+    """
+    Return the current hour with the least significant 
+    time segments set to 0
+    """
     now = datetime.now()
     y, m, d, h = (now.year, now.month, now.day, now.hour)
     return datetime(y, m, d, h, 0)
 
 
 def round_to_hour(dt):
+    """
+    Create a range for querying over an hour.
+    """
     gt = datetime(dt.year, dt.month, dt.day, dt.hour, 0, 0)
     lt = datetime(dt.year, dt.month, dt.day, dt.hour + 1, 0, 0)
     return gt, lt
 
 
 def calculate_time(sample_number):
+    """
+    Estimate the second a sample was taken based on 
+    the index (SAMPLE_NUMBER) of a sample.
+    """
     minute = sample_number / SPM
     second = ceil((minute - trunc(minute)) * 60)
     return int(minute), int(second)
@@ -70,6 +81,9 @@ def execute(parsed_args):
 
 class ArduinoLog():
     def __init__(self, db=MongoClient('localhost', 27017)):
+        """
+        If a MongoClient isn't provided, we'll guess 127.0.0.1:27017.
+        """
         self._client = None
         self._database = None
         self._tsdata = None
@@ -78,30 +92,45 @@ class ArduinoLog():
 
     @property
     def mc(self):
+        """
+        Returns a MongoClient object.
+        """
         if self._client is None:
             self._client = MongoClient('localhost', 27017)
         return self._client
 
     @property
     def db(self):
+        """
+        Returns a Mongo database object.
+        """
         if self._database is None:
             self._database = self.mc.arduinolog
         return self._database
 
     @property
     def ts(self):
+        """
+        Returns the timeseriesdata collection.
+        """
         if self._tsdata is None:
             self._tsdata = self.db.timeseriesdata
         return self._tsdata
 
     @property
     def ev(self):
+        """
+        Returns the eventdata collection.
+        """
         if self._evdata is None:
             self._evdata = self.db.eventdata
         return self._evdata
 
     @property
     def ts_sensors(self):
+        """
+        Returns a list of timeseries-type sensors.
+        """
         pipeline = [
             {
                 '$group': {
@@ -117,6 +146,9 @@ class ArduinoLog():
 
     @property
     def ev_sensors(self):
+        """
+        Returns a list of event-type sensors.
+        """
         pipeline = [
             {
                 '$group': {
@@ -131,6 +163,9 @@ class ArduinoLog():
         return s_list
 
     def sample_count(self, sensor, dt=current_hour()):
+        """
+        Returns the number of samples in a particular hour.
+        """
         pipeline = [
             {
                 '$match': {
@@ -158,6 +193,9 @@ class ArduinoLog():
         return res[0]['count']
 
     def latest_documents(self):
+        """
+        Returns the most recent documents for each timeseries-type sensor.
+        """
         filter = {}
         limit = len(self.ts_sensors)
         sort = [('ts_hour', DESCENDING),
@@ -166,6 +204,9 @@ class ArduinoLog():
         return [d for d in cursor]
 
     def hour_cursor(self, sensor, dt=current_hour()):
+        """
+        Returns a Mongo cursor pointing to a range of timeseries data.
+        """
         gt, lt = round_to_hour(dt)
         criteria = {
             'name': sensor,
@@ -178,31 +219,54 @@ class ArduinoLog():
         return dat
 
     def hour_list(self, sensor, dt=current_hour()):
+        """
+        Converts the cursor from hour_cursor() to a list.
+        """
         return [x for x in self.hour_cursor(sensor, dt)['values']]
 
-    def hour_events(self, sensor, dt=current_hour()):
-        gt = datetime(dt.year, dt.month, dt.day, dt.hour, 0, 0)
-        lt = datetime(dt.year, dt.month, dt.day, dt.hour + 1, dt.minute, 0)
+    def hour_events_cursor(self, sensor, dt=current_hour()):
+        """
+        Returns a Mongo cursor pointing to an hour range of event data.
+        """
+        gt, lt = round_to_hour(dt)
         dat = self.ev.find({'name': sensor,
                             'ts': {'$gt': gt, '$lt': lt}})
         return dat
 
     def hour_event_list(self, sensor, dt=current_hour()):
-        return [x for x in self.hour_events(sensor, dt)]
+        """
+        Converts the cursor from hour_events_cursor() to a list.
+        """
+        return [x for x in self.hour_events_cursor(sensor, dt)]
 
     def avg_hour(self, sensor, dt=current_hour()):
+        """
+        Returns the average of an hour on a timeseries-type sensor.
+        """
         return self.hour_stats(sensor, dt)['avg']
 
     def min_hour(self, sensor, dt=current_hour()):
+        """
+        Returns the min value from an hour on a timeseries-type sensor.
+        """
         return self.hour_stats(sensor, dt['min'])
 
     def max_hour(self, sensor, dt=current_hour()):
+        """
+        Returns the max value from an hour on a timeseries-type sensor.
+        """
         return self.hour_stats(sensor, dt['max'])
 
     def std_hour(self, sensor, dt=current_hour()):
+        """
+        Returns the standard deviation for an hour on a timeseries-type sensor.
+        """
         return(np.std(self.hour_list(sensor, dt)))
 
     def print_events(self, dt=current_hour()):
+        """
+        Print a table of events in a given (DT) hour.
+        """
         header = ('Sensor', 'Time', 'Values')
         hfmt = '{:^15s}|{:^10s}|{:^10s}'
         fmt = '{:15s}|{:10s}|{:10f}'
@@ -222,14 +286,25 @@ class ArduinoLog():
 
     def print_values(self, sensor, dt=current_hour()):
         header = ('Sensor', 'Time', 'Values')
-        hfmt = '{:^15s}|{:^10s}|{:^10s}'
-        fmt = '{:15s}|{:10s}|{:10f}'
-        datestring = '{:2d}:{:02d}'.format(dt.hour, dt.minute)
+        hfmt = '{:^15s}|{:^19s}|{:^10s}'
+        fmt = '{:15s}|{:19s}|{:10f}'
         print(hfmt.format(*header))
+        cnt = 0
         for v in self.hour_list(sensor, dt):
+            minute, second = calculate_time(cnt)
+            datestring = '{:d}-{:d}-{:d} {:2d}:{:02d}:{:02d}'.format(dt.year,
+                                                                        dt.month,
+                                                                        dt.day,
+                                                                        dt.hour,
+                                                                        minute,
+                                                                        second)
             print(fmt.format(sensor, datestring, v))
+            cnt += 1
 
     def print_hour_table(self, dt=current_hour()):
+        """
+        Print a table of statistics for a given (DT) hour from all sensors.
+        """
         header = ('Sensor', 'Time', 'σ', 'Avg', 'Max', 'Min')
         hfmt = '{:^15s}|{:^10s}|{:^10s}|{:^10s}|{:^10s}|{:^10s}'
         fmt = '{:15s}|{:10s}|{:10.3f}|{:10.3f}|{:10.3f}|{:10.3f}'
