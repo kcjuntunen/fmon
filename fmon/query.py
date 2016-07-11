@@ -22,6 +22,7 @@ from pymongo import MongoClient, ASCENDING, DESCENDING
 from datetime import datetime
 from dateutil import parser
 from math import ceil, trunc
+from sys import stderr
 import numpy as np
 import argparse
 
@@ -77,12 +78,6 @@ def parse_args():
 
 def execute(parsed_args):
     al = ArduinoLog()
-    if parsed_args.sensors:
-        fmt = '|{:^25s}|'
-        print_header(fmt, ('Time series sensors',))
-        print('\n'.join(al.ts_sensors))
-        print_header(fmt, ('Event sensors',))
-        print('\n'.join(al.ev_sensors))
     if parsed_args.datetime is not None:
         dt = parser.parse(parsed_args.datetime)
     else:
@@ -90,6 +85,18 @@ def execute(parsed_args):
 
     if parsed_args.events:
         al.print_events(dt)
+    elif parsed_args.sensors:
+        fmt = '|{:^25s}|'
+        print_header(fmt, ('Time series sensors',))
+        try:
+            print('\n'.join(al.ts_sensors))
+        except Exception as e:
+            stderr.write('Couldn\'t find time series sensors: {}\n'.format(e))
+        print_header(fmt, ('Event sensors',))
+        try:
+            print('\n'.join(al.ev_sensors))
+        except Exception as e:
+            stderr.write('Couldn\'t find event sensors: {}\n'.format(e)) 
     else:
         al.print_hour_table(dt)
 
@@ -395,12 +402,16 @@ class ArduinoLog():
         labelline = hfmt.format(*header)
         print_header(hfmt, header)
         for sensor in self.ts_sensors:
-            stats = self.hour_stats(sensor, dt)
-            data = (sensor,
-                    dt.strftime('%Y/%m/%d'),
-                    self.std_hour(sensor, dt),
-                    stats['avg'], stats['max'], stats['min'])
-            print(fmt.format(*data))
+            try:
+                stats = self.hour_stats(sensor, dt)
+                data = (sensor,
+                        dt.strftime('%Y/%m/%d'),
+                        self.std_hour(sensor, dt),
+                        stats['avg'], stats['max'], stats['min'])
+                print(fmt.format(*data))
+            except Exception as e:
+                stderr.write('Failed to find data for \'{}\'\n'.format(dt))
+                exit(-1)
 
     def print_events(self, dt=current_hour()):
         """
