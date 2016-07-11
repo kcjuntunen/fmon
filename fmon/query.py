@@ -387,7 +387,7 @@ class ArduinoLog():
         labelline = hfmt.format(*header)
         print_header(hfmt, header)
         for sensor in self.ts_sensors:
-            stats = self.hour_stats(sensor)
+            stats = self.hour_stats(sensor, dt)
             data = (sensor,
                     dt.strftime('%Y/%m/%d'),
                     self.std_hour(sensor, dt),
