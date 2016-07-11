@@ -70,11 +70,19 @@ def parse_args():
     parser.add_argument('-d', '--datetime', help='specify an hour')
     parser.add_argument('-e', '--events', help='list events',
                         action='store_true')
+    parser.add_argument('-s', '--sensors', help='list sensors',
+                        action='store_true')
     return parser.parse_args()
 
 
 def execute(parsed_args):
     al = ArduinoLog()
+    if parsed_args.sensors:
+        fmt = '|{:^25s}|'
+        print_header(fmt, ('Time series sensors',))
+        print('\n'.join(al.ts_sensors))
+        print_header(fmt, ('Event sensors',))
+        print('\n'.join(al.ev_sensors))
     if parsed_args.datetime is not None:
         dt = parser.parse(parsed_args.datetime)
     else:
