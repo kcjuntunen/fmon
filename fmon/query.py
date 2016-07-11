@@ -89,12 +89,12 @@ def execute(parsed_args):
         fmt = '|{:^25s}|'
         print_header(fmt, ('Time series sensors',))
         try:
-            print('\n'.join(al.ts_sensors))
+            print('\n'.join(item for item in al.ts_sensors if item))
         except Exception as e:
             stderr.write('Couldn\'t find time series sensors: {}\n'.format(e))
         print_header(fmt, ('Event sensors',))
         try:
-            print('\n'.join(al.ev_sensors))
+            print('\n'.join(item for item in al.ev_sensors if item))
         except Exception as e:
             stderr.write('Couldn\'t find event sensors: {}\n'.format(e)) 
     else:
