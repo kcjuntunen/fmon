@@ -16,8 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """
+import argparse
+from .eveserve import start_eve
 import json
-import bson
 import logging
 import pymongo
 import serial
@@ -36,8 +37,9 @@ missed_message_limit = 5
 
 class Fmon():
     def __init__(self, server='localhost', port=27017,
-                 username='', passwd='', db='arduinolog'):
+                 username='', passwd='', db='arduinolog', args=None):
         # set up logging
+        self.args = args
         self.start_logging()
         self.logger.debug('Connecting to db')
         self.mc = MongoConnection(server, port, username, passwd, db)
@@ -56,14 +58,20 @@ class Fmon():
         ch = logging.StreamHandler()
         ch.setFormatter(cfmt)
         ch.setLevel(logging.ERROR)
-        
+
+        if self.args and self.args.verbose:
+            ch.setLevel(int(self.args.verbose))
+
         fh = logging.FileHandler('fmon.log')
         fh.setFormatter(ffmt)
         fh.setLevel(logging.DEBUG)
-        
+
+        if self.args and self.args.loglevel:
+            ch.setLevel(int(self.args.loglevel))
+
         self.logger.addHandler(ch)
         self.logger.addHandler(fh)
-        
+
     def poll(self):
         self.ser.write(poll_args['sig'])
         self.ser.flush()
@@ -111,10 +119,20 @@ class Fmon():
         except pymongo.errors.ConfigurationError as ce:
             self.logger.error('Configuration Error: {0}'.format(ce))
 
+def args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-e', '--eve', help='expose resources via REST api',
+                        action='store_true')
+    parser.add_argument('-l', '--loglevel', help='set log level')
+    parser.add_argument('-v', '--verbose', help='set verbosity')
+    return parser.parse_args()
+
 def start():
-    f = Fmon()
-    l = logging.getLogger('FMon')
-    l.debug('Starting loop')
+    f = Fmon(args=args())
+
+    if f.args and f.args.eve:
+        start_eve()
+
     f.poll_loop()
     f.listen()
 
