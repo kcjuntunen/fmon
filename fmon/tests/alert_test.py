@@ -2,6 +2,7 @@ from unittest import TestCase
 from unittest.mock import patch
 
 from datetime import datetime
+from pymongo.errors import BulkWriteError
 import json
 
 from fmon.mongoconnection import MongoConnection
@@ -12,10 +13,34 @@ import testdata
 
 class TestCreate(TestCase):
     def setUp(self):
-        self.mc = MongoConnection('localhost', 27017, '', '')
+        self.mc = MongoConnection('localhost', 27017, '', '', 'testdb')
+
+        try:
+            self.mc.database['config'].insert_one(testdata.config)
+        except Exception as e:
+            print(e)
+            
+        bulk = self.mc.database['alerts'].initialize_unordered_bulk_op()
+        for alert in testdata.alerts:
+            bulk.insert(alert)
+        try:
+            bulk.execute()
+        except BulkWriteError as bwe:
+            print(bwe)
+            
         self.fmc = FMonConfiguration(self.mc)
         self.alerts = Alerts(self.mc, self.fmc)
 
+    def tearDown(self):
+        self.mc.database['config'].drop()
+        self.mc.database['alerts'].drop()
+        self.mc.database['timeseriesdata'].drop()
+        self.mc.database['eventdata'].drop()
+        try:
+            self.mc.drop_database('testdb')
+        except:
+            print("Didn't drop db.")
+        
     def test_found_something(self):
         self.assertIsNotNone(self.alerts)
 

@@ -1,5 +1,6 @@
 from unittest import TestCase
 from fmon.mongoconnection import MongoConnection
+from pymongo.errors import BulkWriteError
 from fmon import fmon
 
 import json
@@ -8,8 +9,30 @@ import testdata
 
 class TestCreate(TestCase):
     def setUp(self):
-        self.mc = MongoConnection('localhost', 27017, '', '')
+        self.mc = MongoConnection('localhost', 27017, '', '', 'testdb')
+        try:
+            self.mc.database['config'].insert_one(testdata.config)
+        except Exception as e:
+            print(e)
+            
+        bulk = self.mc.database['alerts'].initialize_unordered_bulk_op()
+        for alert in testdata.alerts:
+            bulk.insert(alert)
+        try:
+            bulk.execute()
+        except BulkWriteError as bwe:
+            print(bwe)
         self.fm = fmon.Fmon()
+
+    def tearDown(self):
+        self.mc.database['config'].drop()
+        self.mc.database['alerts'].drop()
+        self.mc.database['timeseriesdata'].drop()
+        self.mc.database['eventdata'].drop()
+        try:
+            self.mc.drop_database('testdb')
+        except:
+            print("Didn't drop db.")
 
     def test_connection(self):
         self.assertIsNotNone(self.mc.connection)
