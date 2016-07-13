@@ -22,7 +22,7 @@ import logging
 import pymongo
 
 class MongoConnection():
-    def __init__(self, server, port, username, passwd):
+    def __init__(self, server, port, username, passwd, db):
         self._server = server
         self._port = port
         self._client = None
@@ -31,6 +31,7 @@ class MongoConnection():
         self._event_data = None
         self._config_data = None
         self._alerts = None
+        self._db = db
         self.logger = logging.getLogger('FMon')
 
     @property
@@ -50,7 +51,7 @@ class MongoConnection():
     def database(self):
         if self._mongdb is None:
             try:
-                db = self.connection.arduinolog
+                db = self.connection[self._db]
                 self._mongdb = db
             except pymongo.errors.PyMongoError as pme:
                 self.logger.error('PyMongo error: {0}'.format(pme))

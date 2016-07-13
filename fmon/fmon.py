@@ -35,11 +35,12 @@ poll_args = {"comm": "go", "unrequited_messages": 0, "sig": DC2}
 missed_message_limit = 5
 
 class Fmon():
-    def __init__(self):
+    def __init__(self, server='localhost', port=27017,
+                 username='', passwd='', db='arduinolog'):
         # set up logging
         self.start_logging()
         self.logger.debug('Connecting to db')
-        self.mc = MongoConnection('localhost', 27017, '', '')
+        self.mc = MongoConnection(server, port, username, passwd, db)
         self.fmc = FMonConfiguration(self.mc)
         self.alerts = Alerts(self.mc, self.fmc)
 
