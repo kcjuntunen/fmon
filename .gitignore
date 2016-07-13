@@ -3,3 +3,4 @@
 *.egg
 .eggs/
 *.log
+testdata.py

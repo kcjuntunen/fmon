@@ -21,6 +21,7 @@ setup(name='Fixture Monitor',
       license='GPLv2',
       packages=['fmon'],
       install_requires=[
+          'pymongo',
           'python-dateutil',
       ],
       include_package_data=True,
