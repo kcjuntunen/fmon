@@ -6,7 +6,7 @@ from threading import Thread, Timer
 
 def start_eve():
     logger = logging.getLogger('Fmon')
-    logger.debug('Starting Eve...')
+    logger.info('Starting Eve...')
     Thread(target=_start).start()
 
 def _start():

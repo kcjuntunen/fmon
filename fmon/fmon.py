@@ -41,12 +41,12 @@ class Fmon():
         # set up logging
         self.args = args
         self.start_logging()
-        self.logger.debug('Connecting to db')
+        self.logger.info('Connecting to db')
         self.mc = MongoConnection(server, port, username, passwd, db)
         self.fmc = FMonConfiguration(self.mc)
         self.alerts = Alerts(self.mc, self.fmc)
 
-        self.logger.debug('Opening serial')
+        self.logger.info('Opening serial')
         self.ser = serial.Serial(port=self.fmc.port,
                                  baudrate=self.fmc.baudrate)
 
@@ -64,10 +64,10 @@ class Fmon():
 
         fh = logging.FileHandler('fmon.log')
         fh.setFormatter(ffmt)
-        fh.setLevel(logging.DEBUG)
+        fh.setLevel(logging.INFO)
 
         if self.args and self.args.loglevel:
-            ch.setLevel(int(self.args.loglevel))
+            fh.setLevel(int(self.args.loglevel))
 
         self.logger.addHandler(ch)
         self.logger.addHandler(fh)
