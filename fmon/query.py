@@ -181,7 +181,7 @@ class ArduinoLog():
                         'eventdata',
                         pipeline=pipeline,
                         explain=False)['result']
-        s_list = [x['_id']['name'] for x in res]
+        s_list = [x['_id']['name'] for x in res if x['_id']]
         return s_list
 
     def sample_count(self, sensor, dt=current_hour()):
