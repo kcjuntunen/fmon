@@ -21,14 +21,15 @@ def lastreading(sensor):
     if sensor in al.ts_sensors:
         return str(al.last_value(sensor))
     else:
-        opening = """<html><head></head><body>"""
-        closing = """</body></html>"""
-        msg = ''.join((opening, '<h1>Error 406</h1>',
-               'Bad sensor name.<br>Choose from:<ul><li>',
-               '<li>'.join(al.ts_sensors),
-               '</ul>',
-               closing))
-        return msg
+        msg = 'Unacceptible sensors. Please try: ' + ', '.join(al.ts_sensors)
+        code = xml_wrap('code', '406')
+        message = xml_wrap('message', msg)
+        xmlerr = xml_wrap('_error', code + message)
+        status = xml_wrap('_status', 'ERR')
+        return xml_wrap('resource', xmlerr + status)
+
+def xml_wrap(tag, text):
+    return '<' + tag + '>' + text + '</' + tag + '>'
 
 def start_eve():
     logger = logging.getLogger('Fmon')
