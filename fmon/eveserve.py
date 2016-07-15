@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
+import sys
 import logging
 from fmon import query
 from eve import Eve
 from threading import Thread, Timer
+from datetime import datetime
 
 app = Eve()
 al = query.ArduinoLog()
@@ -26,7 +28,24 @@ def lastreading(sensor):
         message = xml_wrap('message', msg)
         xmlerr = xml_wrap('_error', code + message)
         status = xml_wrap('_status', 'ERR')
-        return xml_wrap('resource', xmlerr + status)
+        output =  xml_wrap('resource', xmlerr + status)
+        now = datetime.now()
+        print(now)
+        exp = datetime(now.year, now.month, now.day,
+                       now.hour, now.minute, now.second + 20)
+        print(exp)
+        header = {
+            'Content-Type': 'application/xml',
+            'Content-Length': len(output),
+            'Cache-Control': 'max-age=20',
+            'Expires': exp,
+            'Server': 'Eve/0.6.4 Werkzeug/0.11.3 Python/' + str(
+                sys.version.split()[0]),
+            'Date': now}
+        h = ''
+        for k in header:
+            h += '{}: {}\n'.format(k, header[k])
+        return '{}\n\n{}'.format(h, output)
 
 def xml_wrap(tag, text):
     return '<' + tag + '>' + text + '</' + tag + '>'
