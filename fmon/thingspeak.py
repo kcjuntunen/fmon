@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import json, urllib, http.client, sched, time
-import query
+import query, mongoconnection, fmonconfig
 from emailer import TagStripper
 
 
@@ -13,6 +13,10 @@ class ThingspeakInterface():
             self.api_key = config_data['api_key']
             self.collection = 'timeseriesdata'
             self.timespec = config_data['thingspeak_freq']
+            mc = mongoconnection.MongoConnection('localhost',
+                                                 27017, '', '',
+                                                 'arduinolog')
+            self.conf = fmonconfig.FMonConfiguration(mc)
             self.client = query.ArduinoLog()
             self.s = sched.scheduler(time.time, time.sleep)
 
@@ -44,9 +48,12 @@ class ThingspeakInterface():
     def create_url(self, data_dict):
         data = {}
         count = 1
-        for field in self.client.ts_sensors:
+        for field in [s['sensor'] for s in self.conf.sensors
+                      if s['type'] == 'timeseries']:
             data['field' + str(count)] = data_dict[field]
             count += 1
+            if count > 8:
+                break
 
         data['key'] = self.key
         return urllib.parse.urlencode(data)
@@ -71,6 +78,7 @@ class ThingspeakInterface():
             data = response.read()
             
             conn.close()
+            #print(params)
             self.s.enter(self.timespec, 1, self.send_data, ())
         except http.client.HTTPException as he:
             self.s.enter(300, 1, self.send_data, ())
