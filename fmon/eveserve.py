@@ -18,7 +18,17 @@ def sensor_count():
 
 @app.route('/lastreading/<sensor>')
 def lastreading(sensor):
-    return str(al.last_value(sensor))
+    if sensor in al.ts_sensors:
+        return str(al.last_value(sensor))
+    else:
+        opening = """<html><head></head><body>"""
+        closing = """</body></html>"""
+        msg = ''.join((opening, '<h1>Error 406</h1>',
+               'Bad sensor name.<br>Choose from:<ul><li>',
+               '<li>'.join(al.ts_sensors),
+               '</ul>',
+               closing))
+        return msg
 
 def start_eve():
     logger = logging.getLogger('Fmon')
