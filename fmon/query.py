@@ -181,8 +181,22 @@ class ArduinoLog():
                         'eventdata',
                         pipeline=pipeline,
                         explain=False)['result']
-        s_list = [x['_id']['name'] for x in res]
+        s_list = [x['_id']['name'] for x in res if x['_id']]
         return s_list
+
+    @property
+    def all_sensors(self):
+        """
+        Returns a list of all sensors.
+        """
+        a = []
+        for s in self.ts_sensors:
+            if s is not None:
+                a.append(s)
+        for s in self.ev_sensors:
+            if s is not None:
+                a.append(s)
+        return a
 
     def sample_count(self, sensor, dt=current_hour()):
         """
@@ -311,6 +325,40 @@ class ArduinoLog():
         except IndexError as ie:
             return 0
 
+    def count_values(self, sensor):
+        collection = 'timeseriesdata'
+        pipeline = [
+            {
+                '$match': {
+                    'name': sensor,
+                    'ts_hour': current_hour(),
+                },
+            },
+            {
+                '$unwind': '$values'
+            },
+            {
+                '$group':
+                {
+                    '_id': '$name',
+                    'count':
+                    {
+                        '$sum': 1
+                    },
+                },
+            },
+        ]
+        d = self.mc.arduinolog
+        try:
+            res = d.command('aggregate',
+                            collection,
+                            pipeline=pipeline,
+                            explain=False)['result'][0]
+            print(res)
+            return res['count']
+        except IndexError as ie:
+            return 0
+
     def hour_stats(self, sensor, dt=current_hour()):
         pipeline = [
             {
@@ -376,6 +424,13 @@ class ArduinoLog():
             res.append({'name': sensor, 'ts': dt, 'value': v})
             cnt += 1
         return res
+
+    def last_value(self, sensor, dt=current_hour()):
+        """
+        Return the last value in a recorded hour.
+        """
+        x = self.list_values(sensor, dt)        
+        return x[len(x) - 1]['value']
 
     def print_values(self, sensor, dt=current_hour()):
         header = ('Sensor', 'Time', 'Values')

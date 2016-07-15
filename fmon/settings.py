@@ -1,3 +1,16 @@
+from datetime import datetime
+from bson.son import SON
+
+def current_hour():
+    """
+    Return the current hour with the least significant
+    time segments set to 0
+    """
+    now = datetime.now()
+    y, m, d, h = (now.year, now.month, now.day, now.hour)
+    return datetime(y, m, d, h, 0)
+
+
 MONGO_HOST = 'localhost'
 MONGO_PORT = 27017
 MONGO_USERNAME = ''
@@ -57,7 +70,65 @@ eventdata = {
     },
 }
 
+hour_stats = {
+    'datasource': {
+        'source': 'timeseriesdata',
+        'aggregation': {
+            'pipeline': [
+                # {
+                #     '$match': {
+                #         'name': 'tempF'
+                #     }
+                # },
+                {
+                    '$match': {
+                        'ts_hour': {
+                            '$gte': current_hour()
+                        }
+                    }
+                },
+                {
+                    '$unwind': '$values'
+                },
+                {
+                    '$group': {
+                        '_id': '$name',
+                        'min': {
+                            '$min': '$values'
+                        },
+                        'max': {
+                            '$max': '$values'
+                        },
+                        'avg': {
+                            '$avg': '$values'
+                        }
+                    }
+                },
+                {
+                    '$sort': SON([("max", -1), ("_id", -1)])
+                }
+            ]
+        }
+    }
+}
+
+agg_test = {
+    'datasource': {
+        'source': 'timeseriesdata',
+        'aggregation': {
+            'pipeline': [
+                {"$unwind": "$values"},
+                {"$group": {"_id": "$values", "count": {"$sum":
+                                                      "$field1"}}},
+                {"$sort": SON([("count", -1), ("_id", -1)])}
+            ],
+        }
+    }
+}
+
 DOMAIN = {
     'timeseriesdata': timeseriesdata,
     'eventdata': eventdata,
+    'stats': hour_stats,
+    'agg': agg_test,
 }
