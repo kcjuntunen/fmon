@@ -17,7 +17,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """
 import argparse
-from .eveserve import start_eve
 import json
 import logging
 import pymongo
@@ -131,6 +130,7 @@ def start():
     f = Fmon(args=args())
 
     if f.args and f.args.eve:
+        from .eveserve import start_eve
         start_eve()
 
     f.poll_loop()

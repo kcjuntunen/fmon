@@ -102,7 +102,7 @@ def execute(parsed_args):
 
 
 class ArduinoLog():
-    def __init__(self, db=MongoClient('localhost', 27017)):
+    def __init__(self, db=MongoClient('localhost', 27017), name='arduinolog'):
         """
         If a MongoClient isn't provided, we'll guess 127.0.0.1:27017.
         """
@@ -110,6 +110,7 @@ class ArduinoLog():
         self._database = None
         self._tsdata = None
         self._evdata = None
+        self._collection = name
         self._client = db
 
     @property
@@ -122,12 +123,18 @@ class ArduinoLog():
         return self._client
 
     @property
+    def collection(self):
+        if self._collection is None:
+            self._collection = 'arduinolog'
+        return self._collection
+
+    @property
     def db(self):
         """
         Returns a Mongo database object.
         """
         if self._database is None:
-            self._database = self.mc.arduinolog
+            self._database = self.mc[self._collection]
         return self._database
 
     @property
@@ -158,7 +165,7 @@ class ArduinoLog():
                 '$group': {
                     '_id': {'name': '$name'}}}
         ]
-        d = self.mc.arduinolog
+        d = self.mc[self._collection]
         res = d.command('aggregate',
                         'timeseriesdata',
                         pipeline=pipeline,
@@ -176,12 +183,12 @@ class ArduinoLog():
                 '$group': {
                     '_id': {'name': '$name'}}}
         ]
-        d = self.mc.arduinolog
+        d = self.mc[self._collection]
         res = d.command('aggregate',
                         'eventdata',
                         pipeline=pipeline,
                         explain=False)['result']
-        s_list = [x['_id']['name'] for x in res if x['_id']]
+        s_list = [x['_id']['name'] for x in res if x['_id'] is not None]
         return s_list
 
     @property
@@ -221,7 +228,7 @@ class ArduinoLog():
                 }
             }
         ]
-        d = self.mc.arduinolog
+        d = self.mc[self._collection]
         res = d.command('aggregate',
                         'timeseriesdata',
                         pipeline=pipeline,
@@ -315,7 +322,7 @@ class ArduinoLog():
                     }
                 }
             ]
-        d = self.mc.arduinolog
+        d = self.mc[self._collection]
         try:
             res = d.command('aggregate',
                             collection,
@@ -348,7 +355,7 @@ class ArduinoLog():
                 },
             },
         ]
-        d = self.mc.arduinolog
+        d = self.mc[self._collection]
         try:
             res = d.command('aggregate',
                             collection,
@@ -391,7 +398,7 @@ class ArduinoLog():
                 }
             }
         ]
-        d = self.mc.arduinolog
+        d = self.mc[self._collection]
         return d.command('aggregate',
                          'timeseriesdata',
                          pipeline=pipeline,
