@@ -72,3 +72,7 @@ class TestCreate(TestCase):
         cas = [s['sensor'] for s in testdata.config['sensors']]
         cas.sort()
         self.assertEqual(aas, cas)
+
+    def test_last_value(self):
+        lv = testdata.light_not_transgressing['tempF']
+        self.assertEqual(self.al.last_value('tempF'), lv)
