@@ -19,6 +19,7 @@ class ThingspeakInterface():
             self.conf = fmonconfig.FMonConfiguration(mc)
             self.client = query.ArduinoLog()
             self.s = sched.scheduler(time.time, time.sleep)
+            self._prev_dict = {}
 
     def tweet(self, message):
         if self.api_key == '':
@@ -64,10 +65,14 @@ class ThingspeakInterface():
         
         # In [7]: for x in al.ts_sensors:
         #    ...:     print(x, al.last_value(x))
+        dd = {k: self.client.last_value(k) for k in self.client.ts_sensors}
+        if dd == self._prev_dict:
+            return False
 
+        self._prev_dict = dd
+        
         try:
-            params = self.create_url(
-                {k: self.client.last_value(k) for k in self.client.ts_sensors})
+            params = self.create_url(dd)
             
             headers = {'Content-type': 'application/x-www-form-urlencoded',
                    'Accept': 'text/plain'}
