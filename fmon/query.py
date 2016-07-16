@@ -45,7 +45,10 @@ def round_to_hour(dt):
     Create a range for querying over an hour.
     """
     gt = datetime(dt.year, dt.month, dt.day, dt.hour, 0, 0)
-    lt = datetime(dt.year, dt.month, dt.day, dt.hour + 1, 0, 0)
+    if dt.hour < 23:
+        lt = datetime(dt.year, dt.month, dt.day, dt.hour + 1, 0, 0)
+    else:
+        lt = datetime(dt.year, dt.month, dt.day + 1, 0, 0, 0)
     return gt, lt
 
 
@@ -265,7 +268,8 @@ class ArduinoLog():
         """
         Converts the cursor from hour_cursor() to a list.
         """
-        return [x for x in self.hour_cursor(sensor, dt)['values']]
+        l = [x for x in self.hour_cursor(sensor, dt)['values']]
+        return l
 
     def hour_events_cursor(self, sensor, dt=current_hour()):
         """
