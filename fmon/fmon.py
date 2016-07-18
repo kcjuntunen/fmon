@@ -75,7 +75,7 @@ class Fmon():
         self.ser.write(poll_args['sig'])
         self.ser.flush()
         poll_args['unrequited_messages'] += 1
-        self.logger.debug("Polling arduino")
+        self.logger.debug("Polling arduino: {}".format(poll_args['unrequited_messages']))
 
     def poll_loop(self):
         if poll_args['unrequited_messages'] < missed_message_limit:
