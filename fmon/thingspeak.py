@@ -2,7 +2,7 @@
 import json, urllib, http.client, sched, time
 import query, mongoconnection, fmonconfig
 from emailer import TagStripper
-
+from datetime import datetime
 
 class ThingspeakInterface():
 
@@ -20,6 +20,7 @@ class ThingspeakInterface():
             self.client = query.ArduinoLog()
             self.s = sched.scheduler(time.time, time.sleep)
             self._prev_dict = {}
+            self.count = 0
 
     def tweet(self, message):
         if self.api_key == '':
@@ -62,15 +63,20 @@ class ThingspeakInterface():
     def send_data(self):
         if self.key == '':
             return False
-        
+        self.count += 1
         # In [7]: for x in al.ts_sensors:
         #    ...:     print(x, al.last_value(x))
         dd = {k: self.client.last_value(k) for k in self.client.ts_sensors}
         if dd == self._prev_dict:
+            print('{:4d} ({}): old dict => {}'.format(self.count, datetime.now(), dd))
+            self.client._database = None
+            self.client._tsdata = None
+            self.s.enter(self.timespec, 1, self.send_data, ())
             return False
 
+        print('{:4d} ({}): new dict => {}'.format(self.count, datetime.now(), dd))
         self._prev_dict = dd
-        
+
         try:
             params = self.create_url(dd)
             
@@ -87,10 +93,10 @@ class ThingspeakInterface():
             self.s.enter(self.timespec, 1, self.send_data, ())
         except http.client.HTTPException as he:
             self.s.enter(300, 1, self.send_data, ())
-            return False, str(he)
+            print(str(he))
         except Exception as e:
             self.s.enter(300, 1, self.send_data, ())
-            return False, str(e)
+            print(str(e))
 
     def start_loop(self):
         self.s.enter(5, 1, self.send_data, ())

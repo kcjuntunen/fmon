@@ -423,7 +423,7 @@ class ArduinoLog():
         """
         res = []
         cnt = 0
-        for v in self.hour_list(sensor, dt):
+        for v in self.hour_cursor(sensor, dt)['values']:
             minute, second = calculate_time(cnt)
             datestring = '{:d}-{:d}-{:d} {:2d}:{:02d}:{:02d}'.format(dt.year,
                                                                      dt.month,
