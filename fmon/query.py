@@ -19,6 +19,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """
 from pymongo import MongoClient, ASCENDING, DESCENDING
+from pymongo.cursor_manager import CursorManager
+from pymongo.cursor import Cursor
 from datetime import datetime
 from dateutil import parser
 from math import ceil, trunc
@@ -99,13 +101,16 @@ def execute(parsed_args):
         try:
             print('\n'.join(item for item in al.ev_sensors if item))
         except Exception as e:
-            stderr.write('Couldn\'t find event sensors: {}\n'.format(e)) 
+            stderr.write('Couldn\'t find event sensors: {}\n'.format(e))
     else:
         al.print_hour_table(dt)
 
 
 class ArduinoLog():
-    def __init__(self, db=MongoClient('localhost', 27017), name='arduinolog'):
+    def __init__(self, db=MongoClient('localhost', 27017),
+                 name='arduinolog',
+                 maxPoolSize=None,
+                 tz_aware=True):
         """
         If a MongoClient isn't provided, we'll guess 127.0.0.1:27017.
         """
@@ -122,7 +127,9 @@ class ArduinoLog():
         Returns a MongoClient object.
         """
         if self._client is None:
-            self._client = MongoClient('localhost', 27017)
+            self._client = MongoClient('localhost', 27017,
+                                       maxPoolSize=None,
+                                       tz_aware=True)
         return self._client
 
     @property
@@ -261,14 +268,18 @@ class ArduinoLog():
                 '$lte': lt
             }
         }
-        dat = self.ts.find(criteria)[0]
+        dat = self.ts.find(criteria)
+        self._tsdata = None
         return dat
 
     def hour_list(self, sensor, dt=current_hour()):
         """
         Converts the cursor from hour_cursor() to a list.
         """
-        l = [x for x in self.hour_cursor(sensor, dt)['values']]
+        c = self.hour_cursor(sensor, dt)
+        l = [x for x in c[0]['values']]
+        # cm = CursorManager(self._client)
+        # cm.close(c., self._client.address)
         return l
 
     def hour_events_cursor(self, sensor, dt=current_hour()):
@@ -278,6 +289,7 @@ class ArduinoLog():
         gt, lt = round_to_hour(dt)
         dat = self.ev.find({'name': sensor,
                             'ts': {'$gt': gt, '$lt': lt}})
+        self._evdata = None
         return dat
 
     def hour_event_list(self, sensor, dt=current_hour()):
@@ -423,7 +435,7 @@ class ArduinoLog():
         """
         res = []
         cnt = 0
-        for v in self.hour_cursor(sensor, dt)['values']:
+        for v in self.hour_list(sensor, dt):
             minute, second = calculate_time(cnt)
             datestring = '{:d}-{:d}-{:d} {:2d}:{:02d}:{:02d}'.format(dt.year,
                                                                      dt.month,
@@ -440,7 +452,8 @@ class ArduinoLog():
         """
         Return the last value in a recorded hour.
         """
-        x = self.list_values(sensor, dt)        
+        x = self.list_values(sensor, dt)
+        self._client.close()
         return x[len(x) - 1]['value']
 
     def print_values(self, sensor, dt=current_hour()):
