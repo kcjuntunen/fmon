@@ -15,7 +15,11 @@ MONGO_HOST = 'localhost'
 MONGO_PORT = 27017
 MONGO_USERNAME = ''
 MONGO_PASSWORD = ''
-MONGO_DBNAME = 'arduinolog'
+
+if 'test' in argv:
+    MONGO_DBNAME = 'testdb'
+else:
+    MONGO_DBNAME = 'arduinolog'
 
 RESOURCE_METHODS = ['GET', 'POST', 'DELETE']
 ITEM_METHODS = ['GET']
