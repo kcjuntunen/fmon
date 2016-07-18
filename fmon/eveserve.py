@@ -4,11 +4,13 @@ import sys
 import logging
 from fmon import query
 from eve import Eve
-from threading import Thread, Timer
+from multiprocessing import Process
 from datetime import datetime
+from flask import request
 
 app = Eve()
 al = query.ArduinoLog()
+_proc = None
 
 @app.route('/sensors')
 def sensor_list():
@@ -35,12 +37,22 @@ def xml_wrap(tag, text):
     return '<' + tag + '>' + text + '</' + tag + '>'
 
 def start_eve():
+    global _proc
     logger = logging.getLogger('Fmon')
     logger.info('Starting Eve...')
-    Thread(target=_start).start()
+    _proc = Process(target=_start)
+    _proc.start()
 
-def _start():
-    app.run(host='0.0.0.0', port=5000)
+def stop_eve():
+    _stop()
     
+def _start():
+    global _proc
+    app.run(host='0.0.0.0', port=5000)
+
+def _stop():
+    _proc.terminate()
+    _proc.join()
+
 if __name__ == "__main__":
     start_eve()
