@@ -1,5 +1,6 @@
 from datetime import datetime
 from bson.son import SON
+from sys import argv
 
 def current_hour():
     """

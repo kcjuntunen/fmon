@@ -159,7 +159,7 @@ class MongoConnection():
                 update = { '$push': { 'values': json_ob[name] } }
                 r = bulkoperation.find(criteria).upsert().update(update)
         try:
-            bulkoperation.execute()
+            bulkoperation.execute({'w': 1, 'wtimeout': 1})
         except pymongo.errors.PyMongoError as pme:
             self.logger.error('PyMongoError: {0}'.format(pme))
 

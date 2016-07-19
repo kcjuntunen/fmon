@@ -114,7 +114,6 @@ class ArduinoLog():
         """
         If a MongoClient isn't provided, we'll guess 127.0.0.1:27017.
         """
-        self._client = None
         self._database = None
         self._tsdata = None
         self._evdata = None
@@ -321,6 +320,14 @@ class ArduinoLog():
         Returns the standard deviation for an hour on a timeseries-type sensor.
         """
         return(np.std(self.hour_list(sensor, dt)))
+
+    def cv_hour(self, sensor, dt=current_hour()):
+        """
+        Returns the coeeficient of variance
+        """
+        std = self.std_hour(sensor, dt)
+        mean = self.avg_hour(sensor, dt)
+        return (std / abs(mean)) * 10
 
     def count_matches(self, filter, collection):
         pipeline = [

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json, urllib, http.client, sched, time
 import query, mongoconnection, fmonconfig
+from sys import stderr, stdout
 from emailer import TagStripper
 from datetime import datetime
 
@@ -16,6 +17,7 @@ class ThingspeakInterface():
             mc = mongoconnection.MongoConnection('localhost',
                                                  27017, '', '',
                                                  'arduinolog')
+            self._client = query.ArduinoLog(db=mc._client, name='arduinolog')
             self.conf = fmonconfig.FMonConfiguration(mc)
             self.s = sched.scheduler(time.time, time.sleep)
             self._prev_dict = {}
@@ -47,6 +49,23 @@ class ThingspeakInterface():
         except http.client.HTTPException as he:
             return False, str(he)
 
+    def create_datadict(self):
+        data = {}
+        for sensor in self._client.ts_sensors:
+            url = 'http://localhost:5000/lastreading/{}'.format(sensor)
+            conn = http.client.HTTPConnection('localhost:5000')
+            try:
+                conn.request('GET',
+                             '/lastreading/{}'.format(sensor))
+                res = conn.getresponse()
+                d = res.read()
+                conn.close()
+                data[sensor] = float(d.decode('utf-8'))
+            except http.client.HTTPException as he:
+                print('HTTPConnection error: {}'.format(he), file=stderr)
+        return data
+
+
     def create_url(self, data_dict):
         data = {}
         count = 1
@@ -64,21 +83,21 @@ class ThingspeakInterface():
         if self.key == '':
             return False
         self.count += 1
-        # In [7]: for x in al.ts_sensors:
-        #    ...:     print(x, al.last_value(x))
-        client = query.ArduinoLog()
-        dd = {k: client.last_value(k) for k in client.ts_sensors}
+        dd = {k: self._client.last_value(k) for k in self._client.ts_sensors}
         if dd == self._prev_dict:
-            print('{:4d} ({}): old dict => {}'.format(self.count, datetime.now(), dd))
+            print('{:4d} ({}): old {:4d}'.format(self.count,
+                                                       datetime.now(),
+                                                       self.oldcount,
+                                                       dd), file=stderr)
             self.s.enter(self.timespec, 1, self.send_data, ())
             self.oldcount += 1
-            if self.oldcount > 20:
-                pass #exit(0)
             return False
 
-        print('{:4d} ({}): new dict => {}'.format(self.count, datetime.now(), dd))
+        print('{:4d} ({}): new dict'.format(self.count,
+                                            datetime.now(), dd))
         self._prev_dict = dd
-        oldcount = 0
+        self.oldcount = 0
+        
         try:
             params = self.create_url(dd)
             
@@ -91,14 +110,17 @@ class ThingspeakInterface():
             data = response.read()
             
             conn.close()
-            #print(params)
+            #stdout.writelines(params)
+            stdout.flush()
             self.s.enter(self.timespec, 1, self.send_data, ())
         except http.client.HTTPException as he:
             self.s.enter(300, 1, self.send_data, ())
-            print(str(he))
+            print(str(he), file=stderr)
+            stderr.flush()
         except Exception as e:
             self.s.enter(300, 1, self.send_data, ())
-            print(str(e))
+            print(str(e), file=stderr)
+            stderr.flush()
 
     def start_loop(self):
         self.s.enter(5, 1, self.send_data, ())
