@@ -8,8 +8,8 @@ from multiprocessing import Process
 from datetime import datetime
 from flask import request
 
-app = Eve()
 al = query.ArduinoLog()
+app = Eve()
 _proc = None
 
 @app.route('/sensors')
@@ -45,7 +45,7 @@ def start_eve():
 
 def stop_eve():
     _stop()
-    
+
 def _start():
     global _proc
     app.run(host='0.0.0.0', port=5000)

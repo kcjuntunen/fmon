@@ -178,8 +178,8 @@ class ArduinoLog():
         res = d.command('aggregate',
                         'timeseriesdata',
                         pipeline=pipeline,
-                        explain=False)['result']
-        s_list = [x['_id']['name'] for x in res]
+                        explain=False)
+        s_list = [x['_id']['name'] for x in res['result']]
         return s_list
 
     @property
@@ -268,6 +268,8 @@ class ArduinoLog():
             }
         }
         dat = self.ts.find(criteria)
+        if not dat.alive:
+            exit(0x404)
         self._tsdata = None
         return dat
 
@@ -319,7 +321,7 @@ class ArduinoLog():
         """
         Returns the standard deviation for an hour on a timeseries-type sensor.
         """
-        return(np.std(self.hour_list(sensor, dt)))
+        return(np.std(self.hour_list([sensor], dt)))
 
     def cv_hour(self, sensor, dt=current_hour()):
         """
@@ -460,7 +462,6 @@ class ArduinoLog():
         Return the last value in a recorded hour.
         """
         x = self.list_values(sensor, dt)
-        self._client.close()
         return x[len(x) - 1]['value']
 
     def print_values(self, sensor, dt=current_hour()):
@@ -477,6 +478,21 @@ class ArduinoLog():
                                                                      dt.minute,
                                                                      dt.second)
             print(fmt.format(sensor, datestring, v['value']))
+
+    def last_values(self):
+        gt, lt = round_to_hour(current_hour())
+        filter = {
+            'name': {
+                '$in': self.ts_sensors
+            },
+            'ts_hour': {
+                '$gte': gt,
+                '$lte': lt
+            }
+        }
+        curs = self.ts.find(filter).sort(
+            'ts_hour', DESCENDING).limit(len(self.ts_sensors))
+        return curs
 
     def print_hour_table(self, dt=current_hour()):
         """
