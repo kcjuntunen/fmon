@@ -457,12 +457,23 @@ class ArduinoLog():
             cnt += 1
         return res
 
-    def last_value(self, sensor, dt=current_hour()):
+    def last_value2(self, sensor, dt=current_hour()):
         """
         Return the last value in a recorded hour.
         """
         x = self.list_values(sensor, dt)
         return x[len(x) - 1]['value']
+
+    def last_value(self, sensor):
+        """
+        Return the last value in the current hour.
+        """
+        olvs = self.last_values()
+        dd = {}
+        for d in olvs:
+            k, v = d['name'], d['values']
+            dd[k] = v[len(v) - 1]
+        return dd[sensor]
 
     def print_values(self, sensor, dt=current_hour()):
         header = ('Sensor', 'Time', 'Values')
@@ -485,10 +496,10 @@ class ArduinoLog():
             'name': {
                 '$in': self.ts_sensors
             },
-            'ts_hour': {
-                '$gte': gt,
-                '$lte': lt
-            }
+            # 'ts_hour': {
+            #     '$gte': gt,
+            #     '$lte': lt
+            # }
         }
         curs = self.ts.find(filter).sort(
             'ts_hour', DESCENDING).limit(len(self.ts_sensors))
