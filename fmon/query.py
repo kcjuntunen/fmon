@@ -25,6 +25,7 @@ from datetime import datetime
 from dateutil import parser
 from math import ceil, trunc
 from sys import stderr
+from os import linesep
 import numpy as np
 import argparse
 
@@ -63,13 +64,13 @@ def calculate_time(sample_number):
     second = ceil((minute - trunc(minute)) * 60)
     return int(minute), int(second)
 
+def hdr(fmt, header):
+    labelline = fmt.format(*header)
+    hline = '-' * len(labelline)
+    return linesep.join((hline, labelline, hline))
 
 def print_header(fmt, header):
-    labelline = fmt.format(*header)
-    print('-' * len(labelline))
-    print(labelline)
-    print('-' * len(labelline))
-
+    print(hdr(fmt, header))
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -475,10 +476,10 @@ class ArduinoLog():
             dd[k] = v[len(v) - 1]
         return dd[sensor]
 
-    def print_values(self, sensor, dt=current_hour()):
+    def _print_values(self, sensor, dt=current_hour()):
         header = ('Sensor', 'Time', 'Values')
         hfmt = '{:^15s}|{:^19s}|{:^10s}'
-        print_header(hfmt, header)
+        output = hdr(hfmt, header) + linesep
         fmt = '{:15s}|{:19s}|{:10f}'
         for v in self.list_values(sensor, dt):
             dt = v['ts']
@@ -488,7 +489,11 @@ class ArduinoLog():
                                                                      dt.hour,
                                                                      dt.minute,
                                                                      dt.second)
-            print(fmt.format(sensor, datestring, v['value']))
+            output += fmt.format(sensor, datestring, v['value']) + linesep
+        return output
+
+    def print_values(self, sensor, dt=current_hour()):
+        print(self._print_values(sensor, dt))
 
     def last_values(self):
         gt, lt = round_to_hour(current_hour())
@@ -505,15 +510,12 @@ class ArduinoLog():
             'ts_hour', DESCENDING).limit(len(self.ts_sensors))
         return curs
 
-    def print_hour_table(self, dt=current_hour()):
-        """
-        Print a table of statistics for a given (DT) hour from all sensors.
-        """
+    def _print_hour_table(self, dt=current_hour()):
         header = ('Sensor', 'Time', 'σ', 'Avg', 'Max', 'Min')
         hfmt = '{:^15s}|{:^10s}|{:^10s}|{:^10s}|{:^10s}|{:^10s}'
         fmt = '{:15s}|{:10s}|{:10.3f}|{:10.3f}|{:10.3f}|{:10.3f}'
-        labelline = hfmt.format(*header)
-        print_header(hfmt, header)
+        #labelline = hfmt.format(*header)
+        output = hdr(hfmt, header) + linesep
         for sensor in self.ts_sensors:
             try:
                 stats = self.hour_stats(sensor, dt)
@@ -521,18 +523,22 @@ class ArduinoLog():
                         dt.strftime('%Y/%m/%d'),
                         self.std_hour(sensor, dt),
                         stats['avg'], stats['max'], stats['min'])
-                print(fmt.format(*data))
+                output += (fmt.format(*data)) + linesep
             except Exception as e:
                 stderr.write('Failed to find data for \'{}\'\n'.format(dt))
                 exit(-1)
+        return output
 
-    def print_events(self, dt=current_hour()):
+    def print_hour_table(self, dt=current_hour()):
         """
-        Print a table of events in a given (DT) hour.
+        Print a table of statistics for a given (DT) hour from all sensors.
         """
+        print(self._print_hour_table(dt))
+
+    def _print_events(self, dt=current_hour()):
         header = ('Sensor', 'Time', 'Values')
         hfmt = '{:^15s}|{:^10s}|{:^10s}'
-        print_header(hfmt, header)
+        output = hdr(hfmt, header) + linesep
         fmt = '{:15s}|{:10s}|{:10f}'
         for sensor in self.ev_sensors:
             for event in self.hour_event_list(sensor, dt):
@@ -541,7 +547,14 @@ class ArduinoLog():
                                                           ev_ts.minute,
                                                           ev_ts.second)
                 data = (sensor, timestring, event['value'])
-                print(fmt.format(*data))
+                output += fmt.format(*data) + linesep
+        return output
+                
+    def print_events(self, dt=current_hour()):
+        """
+        Print a table of events in a given (DT) hour.
+        """
+        print(self._print_events(dt))
 
     def __str__(self):
         return self.db.name
