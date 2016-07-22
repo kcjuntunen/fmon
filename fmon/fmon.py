@@ -118,6 +118,12 @@ class Fmon():
         except pymongo.errors.ConfigurationError as ce:
             self.logger.error('Configuration Error: {0}'.format(ce))
 
+    def start_eve(self):
+        from .eveserve import EveServer
+        e = EveServer(mongoclient=self.mc._client, name=self.mc._db)
+        t = Thread(target=e.eve_start, args=())
+        t.run()
+
 def args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-e', '--eve', help='expose resources via REST api',
@@ -130,8 +136,7 @@ def start():
     f = Fmon(args=args())
 
     if f.args and f.args.eve:
-        from .eveserve import start_eve
-        start_eve()
+        f.start_eve()
 
     f.poll_loop()
     f.listen()
