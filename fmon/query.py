@@ -321,7 +321,7 @@ class ArduinoLog():
         """
         Returns the standard deviation for an hour on a timeseries-type sensor.
         """
-        return(np.std(self.hour_list([sensor], dt)))
+        return np.std(self.hour_list(sensor, dt))
 
     def cv_hour(self, sensor, dt=current_hour()):
         """
