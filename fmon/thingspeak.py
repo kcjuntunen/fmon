@@ -2,6 +2,7 @@
 import json, urllib, http.client, time
 #from threading import Timer, Lock
 import query, mongoconnection, fmonconfig
+from pymongo.errors import PyMongoError
 from sys import stderr, stdout
 from emailer import TagStripper
 from datetime import datetime
@@ -139,9 +140,11 @@ class ThingspeakInterface():
                     time.sleep(self.timespec)
                 else:
                     exit(0xFF)
+            except PyMongoError as p:
+                print('PyMongoError => {}'.format(p.args), file=stderr)
             except Exception as e:
-                print(':-(   => {}'.format(str(e.args)), file=stderr)
-                exit(0xFF)
+                print('General Exception => {}'.format(str(e.args)), file=stderr)
+                exit(0xff)
 
 def start(config_file):
     thsp = ThingspeakInterface(config_file)
