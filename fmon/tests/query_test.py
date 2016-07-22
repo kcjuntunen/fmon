@@ -128,7 +128,7 @@ class TestCreate(TestCase):
         hc = self.al.hour_cursor(asensor)
         vs = hc[0]['values']
         self.assertEqual(vs[len(vs) - 1],
-                         testdata.light_transgressing['tempF'])
+                         testdata.light_transgressing[asensor])
 
     def test_hour_list(self):
         asensor = testdata.config['sensors'][0]['sensor']
