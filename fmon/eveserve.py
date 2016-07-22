@@ -41,6 +41,22 @@ class EveServer():
                 msg = ('Unacceptible sensors. Please try:\n' + sl)
                 return msg
 
+        @route(self, '/table/events')
+        def table_events():
+            return self.al._print_events()
+
+        @route(self, '/table/hourstats')
+        def table_hourstats():
+            return self.al._print_hour_table()
+
+        @route(self, '/table/<sensor>')
+        def table(sensor):
+            if sensor in self.al.ts_sensors:
+                return self.al._print_values(sensor)
+            else:
+                sl = ',\n'.join(self.al.ts_sensors)
+                msg = ('Unacceptible sensors. Please try:\n' + sl)
+                return msg
 
     def eve_start(self):
         logger = logging.getLogger('Fmon')
