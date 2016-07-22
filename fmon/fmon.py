@@ -121,8 +121,8 @@ class Fmon():
     def start_eve(self):
         from .eveserve import EveServer
         e = EveServer(mongoclient=self.mc._client, name=self.mc._db)
-        t = Thread(target=e.eve_start, args=())
-        t.run()
+        t = Thread(target=e.eve_start, args=(), name=e.eve_start, daemon=True)
+        t.start()
 
 def args():
     parser = argparse.ArgumentParser()
