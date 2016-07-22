@@ -17,18 +17,12 @@ class EveServer():
         self.al = query.ArduinoLog(db=mongoclient, name=name)
         self.app = Eve(settings='../settings.py')
 
-        # def decorator(f):
-        #     endpoint = options.pop('endpoint', None)
-        #     self.add_url_rule(rule, endpoint, f, **options)
-        #     return f
-
         def route(self, rule, **options):
             def decorator(f):
                 endpoint = options.pop('endpoint', None)
                 self.app.add_url_rule(rule, endpoint, f, **options)
                 return f
             return decorator
-
 
         @route(self, '/sensors')
         def sensor_list():
@@ -41,7 +35,7 @@ class EveServer():
         @route(self, '/lastreading/<sensor>')
         def lastreading(sensor):
             if sensor in self.al.ts_sensors:
-                return al.last_value(sensor)
+                return str(self.al.last_value(sensor))
             else:
                 sl = ',\n'.join(self.al.ts_sensors)
                 msg = ('Unacceptible sensors. Please try:\n' + sl)
