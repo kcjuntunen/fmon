@@ -11,7 +11,7 @@ from flask import request
 
 
 def pre_wrap(text):
-    return ('<pre>' + text + '</pre>')
+    return ('<pre>\n' + text + '</pre>')
 
 class EveServer():
     def __init__(self,
