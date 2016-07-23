@@ -24,6 +24,7 @@ class ThingspeakInterface():
             self._prev_dict = {}
             self.count = 0
             self.oldcount = 0
+            self.chatty = False
 
     def tweet(self, message):
         if self.api_key == '':
@@ -92,19 +93,18 @@ class ThingspeakInterface():
             dd[lv[i]['name']] = vs[len(vs) - 1]
 
         if dd == self._prev_dict:
-            print('{:4d} ({}): old {:4d}'
-                  ', {} cursor(s)'.format(self.count,
-                                          datetime.now(),
-                                          self.oldcount,
-                                          '?'), file=stderr)
-            #self.s.enter(self.timespec, 1, self.send_data, ())
-            stderr.flush()
+            if self.chatty:
+                print(('{:4d} ({}): old {:4d}').format(self.count,
+                                                       datetime.now(),
+                                                       self.oldcount),
+                      file=stdout)
             self.oldcount += 1
             return self.oldcount < 5
 
-        print('{:4d} ({}): new dict, {} cursor(s)'.format(self.count,
-                                                          datetime.now(),
-                                                          '?'))
+        if self.chatty:
+            print(('{:4d} ({}): new dict').format(self.count,
+                                                   datetime.now()),
+                  file=stderr)
         self._prev_dict = dd
         self.oldcount = 0
 
@@ -121,17 +121,14 @@ class ThingspeakInterface():
 
             conn.close()
             #stdout.writelines(params)
-            stdout.flush()
             return True
             #self.s.enter(self.timespec, 1, self.send_data, ())
         except http.client.HTTPException as he:
             #self.s.enter(300, 1, self.send_data, ())
             print(str(he), file=stderr)
-            stderr.flush()
         except Exception as e:
             #self.s.enter(300, 1, self.send_data, ())
             print(str(e), file=stderr)
-            stderr.flush()
 
     def start_loop(self):
         while True:
@@ -144,12 +141,20 @@ class ThingspeakInterface():
                 print('PyMongoError => {}'.format(p.args), file=stderr)
             except Exception as e:
                 print('General Exception => {}'.format(str(e.args)), file=stderr)
-                exit(0xff)
+                exit(0xFF)
 
-def start(config_file):
+def start(config_file, chatty):
     thsp = ThingspeakInterface(config_file)
+    thsp.chatty = chatty
     thsp.start_loop()
 
 if __name__ == "__main__":
     import sys
-    start(sys.argv[1])
+    f = '/etc/arduino_log.json'
+    chatty = False
+    for arg in sys.argv:
+        if arg.endswith('.json'):
+            f = arg
+        if arg == '-c':
+            chatty = True
+    start(f, chatty)
