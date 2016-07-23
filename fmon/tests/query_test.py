@@ -136,26 +136,19 @@ class TestCreate(TestCase):
         self.assertEqual(l[0], testdata.light_transgressing[asensor])
 
     def test_hour_events_cursor(self):
-        asensor = self.al.ev_sensors[0]
-        bsensor = self.al.ev_sensors[1]
-        hec1 = self.al.hour_events_cursor(asensor)
-        hec2 = self.al.hour_events_cursor(bsensor)
+        asensor = self.al.ev_sensors[1]
+        bsensor = self.al.ev_sensors[2]
+        hec1 = self.al.hour_events_cursor()
         l1 = [x for x in hec1]
-        l2 = [x for x in hec2]
-        self.assertEqual(hec1.count(), 2)
-        self.assertEqual(len(l1), 2)
-        self.assertEqual(len(l2), 3)
-        self.assertEqual(hec2.count(), 3)
-        print(l1)
-        self.assertEqual(l1[0]['name'], asensor)
+        self.assertEqual(hec1.count(), 6)
+        self.assertEqual(len(l1), 6)
+        self.assertEqual(l1[0]['name'], bsensor)
         self.assertEqual(l1[1]['name'], asensor)
-        self.assertEqual(l1[1]['value'], 1)
-        self.assertEqual(l2[0]['name'], bsensor)
 
     def test_hour_event_list(self):
         ev = self.al.ev_sensors
-        hel = self.al.hour_event_list(ev[0])
-        self.assertEqual(hel[0]['name'], ev[0])
+        hel = self.al.hour_event_list()
+        self.assertEqual(hel[0]['name'], ev[2])
 
     def test_avg_hour(self):
         pass
