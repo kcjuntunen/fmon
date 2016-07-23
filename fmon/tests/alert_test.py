@@ -90,14 +90,17 @@ class TestCreate(TestCase):
     def test_send_alerts(self):
         a = {alert.sensor: alert for alert in self.alerts}
         self.alerts.send_alerts(testdata.light_transgressing)
-        msg = 'false: {}'.format(testdata.light_transgressing)
-        self.assertTrue(a[testdata.alerts[0]['sensor']].sent, msg=msg)
-        msg = 'true: {}'.format(testdata.light_transgressing)
-        self.assertFalse(a[testdata.alerts[1]['sensor']].sent, msg=msg)
+        if a[testdata.alerts[0]['sensor']].agreeable_day(datetime.now().weekday()):
+            self.assertTrue(a[testdata.alerts[0]['sensor']].sent)
+        else:
+            self.assertFalse(a[testdata.alerts[0]['sensor']].sent)
+        sent = a[testdata.alerts[1]['sensor']].sent
+        self.assertFalse(sent)
 
         self.alerts.send_alerts(testdata.light_not_transgressing)
         msg = 'true: {}'.format(testdata.light_transgressing)
-        self.assertFalse(a[testdata.alerts[0]['sensor']].sent)
+        sent = a[testdata.alerts[0]['sensor']].sent
+        self.assertFalse(sent)
 
     def test_agreeable_day(self):        
         a = {alert.sensor: alert for alert in self.alerts}
