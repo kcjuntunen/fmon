@@ -3,6 +3,8 @@
 import sys
 import logging
 from pymongo import MongoClient
+from dateutil.parser import parse
+from os import linesep
 from fmon import query
 from eve import Eve
 from multiprocessing import Process
@@ -35,7 +37,7 @@ class EveServer():
         def sensor_count():
             return str(len([x for x in self.al.all_sensors]))
 
-        @route(self, '/lastreading/<sensor>')
+        @route(self, '/timeseriesdata/lastreading/<sensor>')
         def lastreading(sensor):
             if sensor in self.al.ts_sensors:
                 return str(self.al.last_value(sensor))
@@ -44,15 +46,39 @@ class EveServer():
                 msg = ('Unacceptible sensors. Please try:\n' + sl)
                 return msg
 
-        @route(self, '/table/events')
+        @route(self, '/eventdata/table/')
         def table_events():
             return pre_wrap(self.al._print_events())
 
-        @route(self, '/table/hourstats')
+        @route(self, '/eventdata/table/<dt>')
+        def events_date(dt):
+            d = datetime.now()
+            mesg = ''
+            try:
+                d = parse(dt.split('(')[1].split(')')[0])
+            except ValueError as ve:
+                mesg = ('ERR: Invalid date ({}), '
+                        'showing table for {}').format(ve, d) + linesep
+            output = (mesg + self.al._print_events(d))
+            return pre_wrap(output)
+
+        @route(self, '/timeseriesdata/table/hourstats')
         def table_hourstats():
             return pre_wrap(self.al._print_hour_table())
 
-        @route(self, '/table/<sensor>')
+        @route(self, '/timeseriesdata/table/hourstats/<dt>')
+        def hour_stats_date(dt):
+            d = datetime.now()
+            mesg = ''
+            try:
+                d = parse(dt.split('(')[1].split(')')[0])
+            except ValueError as ve:
+                mesg = ('ERR: Invalid date ({}), '
+                        'showing table for {}').format(ve, d)  + linesep
+            output = (mesg + self.al._print_hour_table(d))
+            return pre_wrap(output)
+
+        @route(self, '/timeseriesdata/table/<sensor>')
         def table(sensor):
             if sensor in self.al.ts_sensors:
                 return pre_wrap(self.al._print_values(sensor))
