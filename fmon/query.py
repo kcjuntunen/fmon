@@ -269,9 +269,6 @@ class ArduinoLog():
             }
         }
         dat = self.ts.find(criteria)
-        if not dat.alive:
-            exit(0x404)
-        self._tsdata = None
         return dat
 
     def hour_list(self, sensor, dt=current_hour()):
@@ -284,21 +281,20 @@ class ArduinoLog():
         # cm.close(c., self._client.address)
         return l
 
-    def hour_events_cursor(self, sensor, dt=current_hour()):
+    def hour_events_cursor(self, dt=current_hour()):
         """
         Returns a Mongo cursor pointing to an hour range of event data.
         """
         gt, lt = round_to_hour(dt)
-        dat = self.ev.find({'name': sensor,
-                            'ts': {'$gt': gt, '$lt': lt}})
+        dat = self.ev.find({'ts': {'$gt': gt, '$lt': lt}}).sort('ts', ASCENDING)
         self._evdata = None
         return dat
 
-    def hour_event_list(self, sensor, dt=current_hour()):
+    def hour_event_list(self, dt=current_hour()):
         """
         Converts the cursor from hour_events_cursor() to a list.
         """
-        return [x for x in self.hour_events_cursor(sensor, dt)]
+        return [x for x in self.hour_events_cursor(dt)]
 
     def avg_hour(self, sensor, dt=current_hour()):
         """
@@ -432,11 +428,9 @@ class ArduinoLog():
 
     def list_events(self, dt=current_hour()):
         res = []
-        for sensor in self.ev_sensors:
-            for event in self.hour_event_list(sensor, dt):
-                ev_ts = event['ts']
-                data = (sensor, ev_ts, event['value'])
-                res.append(data)
+        for event in self.hour_event_list(dt):
+            data = (event['name'], event['ts'], event['value'])
+            res.append(data)
         return res
 
     def list_values(self, sensor, dt=current_hour()):
@@ -540,14 +534,13 @@ class ArduinoLog():
         hfmt = '{:^15s}|{:^10s}|{:^10s}'
         output = hdr(hfmt, header) + linesep
         fmt = '{:15s}|{:10s}|{:10f}'
-        for sensor in self.ev_sensors:
-            for event in self.hour_event_list(sensor, dt):
-                ev_ts = event['ts']
-                timestring = '{:2d}:{:02d}:{:02d}'.format(ev_ts.hour,
-                                                          ev_ts.minute,
-                                                          ev_ts.second)
-                data = (sensor, timestring, event['value'])
-                output += fmt.format(*data) + linesep
+        for event in self.hour_event_list(dt):
+            ev_ts = event['ts']
+            timestring = '{:2d}:{:02d}:{:02d}'.format(ev_ts.hour,
+                                                      ev_ts.minute,
+                                                      ev_ts.second)
+            data = (event['name'], timestring, event['value'])
+            output += fmt.format(*data) + linesep
         return output
                 
     def print_events(self, dt=current_hour()):
