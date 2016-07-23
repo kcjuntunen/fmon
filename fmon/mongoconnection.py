@@ -103,7 +103,7 @@ class MongoConnection():
 
     @property
     def current_hour(self):
-        now = datetime.datetime.now()
+        now = datetime.datetime.utcnow()
         y = now.year
         m = now.month
         d = now.day
@@ -112,12 +112,12 @@ class MongoConnection():
 
     @property
     def current_minute(self):
-        m = datetime.datetime.now().minute
+        m = datetime.datetime.utcnow().minute
         return m
 
     @property
     def current_second(self):
-        s = datetime.datetime.now().second
+        s = datetime.datetime.utcnow().second
         return s
 
     def create_insert_payloads(self, json_ob):
@@ -132,7 +132,7 @@ class MongoConnection():
                 payload = {
                     'ts_hour': h,
                     'name': name,
-                    'values': { str(m): 
+                    'values': { str(m):
                                 [ json_ob[name], ] }
                 }
                 payloads.append(payload)
@@ -144,7 +144,7 @@ class MongoConnection():
         #     self._update(data)
         # else:
         #     self._insert(data)
-    
+
     def _update(self, json_ob):
         payloads = []
         config = self.config_data.find_one()
@@ -173,6 +173,6 @@ class MongoConnection():
     def event_insert(self, data):
         if 'Event' in data:
             data = data['Event']
-        data['ts'] = datetime.datetime.now()
+        data['ts'] = datetime.datetime.utcnow()
         self.logger.debug('Inserting {0}'.format(data))
         self.event_data.insert_one(data)

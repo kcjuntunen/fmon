@@ -22,6 +22,7 @@ from pymongo import MongoClient, ASCENDING, DESCENDING
 from pymongo.cursor_manager import CursorManager
 from pymongo.cursor import Cursor
 from datetime import datetime
+from pytz import utc
 from dateutil import parser
 from math import ceil, trunc
 from sys import stderr
@@ -38,7 +39,7 @@ def current_hour():
     Return the current hour with the least significant
     time segments set to 0
     """
-    now = datetime.now()
+    now = datetime.utcnow()
     y, m, d, h = (now.year, now.month, now.day, now.hour)
     return datetime(y, m, d, h, 0)
 
@@ -535,14 +536,14 @@ class ArduinoLog():
         output = hdr(hfmt, header) + linesep
         fmt = '{:15s}|{:10s}|{:10f}'
         for event in self.hour_event_list(dt):
-            ev_ts = event['ts']
+            ev_ts = utc.localize(event['ts']).astimezone()
             timestring = '{:2d}:{:02d}:{:02d}'.format(ev_ts.hour,
                                                       ev_ts.minute,
                                                       ev_ts.second)
             data = (event['name'], timestring, event['value'])
             output += fmt.format(*data) + linesep
         return output
-                
+
     def print_events(self, dt=current_hour()):
         """
         Print a table of events in a given (DT) hour.
