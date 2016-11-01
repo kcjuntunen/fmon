@@ -54,14 +54,16 @@ class Fmon():
         self.logger.setLevel(logging.DEBUG)
         ffmt = logging.Formatter(LOGGING_FORMAT)
         cfmt = logging.Formatter(CONSOLE_FORMAT)
-        ch = logging.StreamHandler()
+        self.ch = logging.StreamHandler()
+        self.fh = logging.FileHandler('fmon.log')
+        ch = self.ch
         ch.setFormatter(cfmt)
         ch.setLevel(logging.ERROR)
 
         if self.args and self.args.verbose:
             ch.setLevel(int(self.args.verbose))
 
-        fh = logging.FileHandler('fmon.log')
+        fh = self.fh
         fh.setFormatter(ffmt)
         fh.setLevel(logging.INFO)
 
@@ -121,6 +123,8 @@ class Fmon():
     def start_eve(self):
         from .eveserve import EveServer
         e = EveServer(mongoclient=self.mc._client, name=self.mc._db)
+        e.app.logger.addHandler(self.fh)
+        e.app.logger.addHandler(self.ch)
         t = Thread(target=e.eve_start, args=(), name=e.eve_start, daemon=True)
         t.start()
 

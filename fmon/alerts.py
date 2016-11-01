@@ -79,7 +79,7 @@ class Alert():
 
     @property
     def message(self):
-        """ 
+        """
         An HTML email message to send in the event of an alert.
         There should be four fields in the format string.
         send_email is going to pass the time, location, fixure name, and
@@ -106,12 +106,11 @@ class Alert():
 
         if self.sent:
             return False
-    
         return (self.agreeable_day(dow) and
                 self.within_workday(t))
 
     def agreeable_day(self, day_of_week):
-        """ 
+        """
         Looking for a datetime.today().weekday() to compare bitwise
         against allowed days from the config data.
         """
@@ -131,7 +130,7 @@ class Alert():
     def transgressing_range(self, dict_ob):
         lt, gt = self.transgression_range
         return ((dict_ob[self.sensor] > lt) and
-               (dict_ob[self.sensor] < gt)) and self.active
+                (dict_ob[self.sensor] < gt)) and self.active
 
     # def __eq__(self, other):
     #     return (self.sensor == other.sensor &
@@ -141,7 +140,9 @@ class Alert():
 
     def __repr__(self):
         return ("<sensor:{!r}, range:{!r}, recipients: {!r}>"
-                .format(self.sensor, self.transgression_range, self.recipients))
+                .format(self.sensor,
+                        self.transgression_range,
+                        self.recipients))
 
     def __str__(self):
         return "{} alert".format(self.friendly_name)

@@ -17,6 +17,8 @@ MONGO_PORT = 27017
 MONGO_USERNAME = ''
 MONGO_PASSWORD = ''
 
+TZ = 'US/Eastern'
+
 if 'test' in argv:
     MONGO_DBNAME = 'testdb'
 else:

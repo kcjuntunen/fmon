@@ -477,7 +477,7 @@ class ArduinoLog():
         output = hdr(hfmt, header) + linesep
         fmt = '{:15s}|{:19s}|{:10f}'
         for v in self.list_values(sensor, dt):
-            dt = v['ts']
+            dt = utc.localize(v['ts']).astimezone()
             datestring = '{:d}-{:d}-{:d} {:2d}:{:02d}:{:02d}'.format(dt.year,
                                                                      dt.month,
                                                                      dt.day,
