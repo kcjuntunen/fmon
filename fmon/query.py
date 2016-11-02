@@ -276,11 +276,14 @@ class ArduinoLog():
         """
         Converts the cursor from hour_cursor() to a list.
         """
-        c = self.hour_cursor(sensor, dt)
-        l = [x for x in c[0]['values']]
-        # cm = CursorManager(self._client)
-        # cm.close(c., self._client.address)
-        return l
+        try:
+            c = self.hour_cursor(sensor, dt)
+            l = [x for x in c[0]['values']]
+            # cm = CursorManager(self._client)
+            # cm.close(c., self._client.address)
+            return l
+        except IndexError as ie:
+            return []
 
     def hour_events_cursor(self, dt=current_hour()):
         """
